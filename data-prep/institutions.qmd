@@ -1,0 +1,360 @@
+---
+title: "Scientific Institutions: Location Data & ZIP-Code Distance Pipeline"
+author: "Jan Pfänder"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: show
+    self-contained: true
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+## Overview
+
+This document prepares the `dist_inst_km` variable used in the alienation–trust
+preregistration: the geodesic distance (km) from each participant's ZIP code to
+the nearest scientific institution.
+
+**What counts as a scientific institution?**
+
+We include two categories:
+
+1. **Research universities** — Carnegie R1 (Doctoral: Very High Research
+   Activity) and R2 (Doctoral: High Research Activity) institutions, sourced
+   from the Integrated Postsecondary Education Data System (IPEDS) via the
+   Urban Institute's `educationdata` package.
+
+2. **Major federal research labs** — approximately 50 facilities operated by
+   DOE, NIH, NIST, NOAA, NASA, and USGS, with coordinates sourced from each
+   agency's website and verified against OpenStreetMap.
+
+**Why log-transform?** Geographic distance is right-skewed (a few very remote
+participants drive the distribution). All analyses use `log(dist_inst_km)`.
+
+**Outputs** (saved to `data/institutions/`, gitignored):
+
+- `institutions.rds` — clean institution dataset with coordinates
+- `zipcode_distances.rds` — ZIP-code lookup table: one row per ZIP, with
+  nearest institution and distance in km
+
+---
+
+## Setup
+
+```{r packages}
+library(tidyverse)
+library(here)
+library(sf)
+library(geosphere)
+library(zipcodeR)
+```
+
+```{r create-dir}
+dir.create(here("data", "institutions"), recursive = TRUE, showWarnings = FALSE)
+```
+
+---
+
+## Part 1: Research Universities (IPEDS)
+
+We download the IPEDS Header/Directory file (HD2022) directly from NCES.
+This file is the authoritative source for institution characteristics including
+coordinates and Carnegie classification codes. Downloading directly avoids any
+API dependency.
+
+Carnegie classification codes of interest (variable `C18BASIC` in IPEDS):
+
+| Code | Label |
+|------|-------|
+| 15   | Doctoral Universities: Very High Research Activity (R1) |
+| 16   | Doctoral Universities: High Research Activity (R2) |
+
+```{r ipeds-download}
+#| cache: true
+
+# Download IPEDS HD2022 (Header/Directory) — ~3 MB zip, ~6,000 institutions.
+# Cached by knitr after first run.
+ipeds_zip  <- tempfile(fileext = ".zip")
+ipeds_dir  <- tempdir()
+
+download.file(
+  url      = "https://nces.ed.gov/ipeds/datacenter/data/HD2022.zip",
+  destfile = ipeds_zip,
+  quiet    = TRUE,
+  mode     = "wb"
+)
+
+unzip(ipeds_zip, exdir = ipeds_dir)
+
+# The main CSV is lowercase in the zip; find it regardless of case
+csv_file   <- list.files(ipeds_dir, pattern = "(?i)^hd2022\\.csv$",
+                         full.names = TRUE)[1]
+ipeds_raw  <- read_csv(csv_file, show_col_types = FALSE)
+
+# Key columns: INSTNM, CITY, STABBR, LATITUDE, LONGITUD, C18BASIC
+glimpse(ipeds_raw |> select(INSTNM, CITY, STABBR, LATITUDE, LONGITUD, C18BASIC))
+```
+
+```{r ipeds-clean}
+universities <- ipeds_raw |>
+  filter(
+    C18BASIC %in% c(15, 16),        # R1 and R2 only
+    !is.na(LATITUDE),
+    !is.na(LONGITUD),
+    # Drop non-contiguous US (Alaska, Hawaii, territories)
+    LATITUDE  > 24 & LATITUDE  < 50,
+    LONGITUD  > -125 & LONGITUD < -66
+  ) |>
+  transmute(
+    name             = INSTNM,
+    city             = CITY,
+    state_abbr       = STABBR,
+    lat              = LATITUDE,
+    lon              = LONGITUD,
+    carnegie_class   = if_else(C18BASIC == 15, "R1", "R2"),
+    institution_type = "university"
+  )
+
+cat("R1 universities:", sum(universities$carnegie_class == "R1"), "\n")
+cat("R2 universities:", sum(universities$carnegie_class == "R2"), "\n")
+cat("Total:          ", nrow(universities), "\n")
+```
+
+```{r universities-map}
+universities_sf <- st_as_sf(universities, coords = c("lon", "lat"), crs = 4326)
+
+ggplot() +
+  geom_sf(data = universities_sf,
+          aes(color = carnegie_class), size = 1.2, alpha = 0.7) +
+  scale_color_manual(values = c(R1 = "#2c7bb6", R2 = "#abd9e9"),
+                     name = "Carnegie") +
+  labs(title = "Research universities included (R1 + R2)",
+       caption = "Source: IPEDS 2022 via Urban Institute educationdata package") +
+  theme_void() +
+  theme(legend.position = "bottom")
+```
+
+---
+
+## Part 2: Federal Research Labs
+
+Manually curated list of ~50 major federal research facilities. Coordinates
+verified against agency websites and OpenStreetMap. This list intentionally
+covers the largest, most prominent labs — it is not exhaustive of every federal
+facility, but captures the institutions most relevant to structural proximity
+to organized science.
+
+```{r federal-labs}
+federal_labs <- tribble(
+  ~name,                                          ~agency,  ~lat,     ~lon,
+  # ── Department of Energy national labs ─────────────────────────────────
+  "Argonne National Laboratory",                  "DOE",   41.7059, -87.9837,
+  "Brookhaven National Laboratory",               "DOE",   40.8674, -72.8776,
+  "Fermi National Accelerator Laboratory",        "DOE",   41.8319, -88.2617,
+  "Idaho National Laboratory",                    "DOE",   43.5246,-112.9541,
+  "Lawrence Berkeley National Laboratory",        "DOE",   37.8755,-122.2477,
+  "Lawrence Livermore National Laboratory",       "DOE",   37.6868,-121.7051,
+  "Los Alamos National Laboratory",               "DOE",   35.8800,-106.2951,
+  "National Renewable Energy Laboratory",         "DOE",   39.7405,-105.1686,
+  "Oak Ridge National Laboratory",                "DOE",   35.9310, -84.3100,
+  "Pacific Northwest National Laboratory",        "DOE",   46.3440,-119.2785,
+  "Sandia National Laboratories (NM)",            "DOE",   34.9653,-106.3969,
+  "Sandia National Laboratories (CA)",            "DOE",   37.9717,-121.7046,
+  "SLAC National Accelerator Laboratory",         "DOE",   37.4160,-122.2034,
+  "Ames National Laboratory",                     "DOE",   42.0267, -93.7317,
+  "Jefferson Lab",                                "DOE",   37.0977, -76.4791,
+  "Savannah River National Laboratory",           "DOE",   33.3487, -81.7229,
+  "National Energy Technology Laboratory",        "DOE",   39.9279, -79.9701,
+  # ── National Institutes of Health ──────────────────────────────────────
+  "NIH Main Campus",                              "NIH",   39.0007, -77.1055,
+  "NIH Rocky Mountain Labs",                      "NIH",   46.8574,-113.9867,
+  "NIH Research Triangle Park",                   "NIH",   35.8973, -78.8622,
+  # ── National Institute of Standards and Technology ──────────────────────
+  "NIST Gaithersburg",                            "NIST",  39.1330, -77.2177,
+  "NIST Boulder",                                 "NIST",  40.0050,-105.2625,
+  # ── NOAA research labs ──────────────────────────────────────────────────
+  "NOAA Earth System Research Lab (Boulder)",     "NOAA",  39.9950,-105.2639,
+  "NOAA Geophysical Fluid Dynamics Lab",          "NOAA",  40.3502, -74.6573,
+  "NOAA Atlantic Oceanographic Lab (Miami)",      "NOAA",  25.7306, -80.1625,
+  "NOAA Pacific Marine Environmental Lab",        "NOAA",  47.6456,-122.3130,
+  "NOAA National Severe Storms Lab",              "NOAA",  35.1817, -97.4432,
+  "NOAA Great Lakes Environmental Research Lab",  "NOAA",  42.2986, -83.7082,
+  # ── NASA field centers ───────────────────────────────────────────────────
+  "NASA Ames Research Center",                    "NASA",  37.4094,-122.0640,
+  "NASA Armstrong Flight Research Center",        "NASA",  34.9594,-117.8822,
+  "NASA Glenn Research Center",                   "NASA",  41.4273, -81.8633,
+  "NASA Goddard Space Flight Center",             "NASA",  38.9915, -76.8404,
+  "NASA Jet Propulsion Laboratory",               "NASA",  34.2014,-118.1720,
+  "NASA Johnson Space Center",                    "NASA",  29.5593, -95.0938,
+  "NASA Kennedy Space Center",                    "NASA",  28.5729, -80.6490,
+  "NASA Langley Research Center",                 "NASA",  37.0837, -76.3694,
+  "NASA Marshall Space Flight Center",            "NASA",  34.7293, -86.6650,
+  "NASA Stennis Space Center",                    "NASA",  30.3629, -89.6003,
+  # ── USGS science centers ─────────────────────────────────────────────────
+  "USGS National Center (Reston)",                "USGS",  38.9476, -77.3673,
+  "USGS Western Region (Menlo Park)",             "USGS",  37.4574,-122.1730,
+  "USGS Central Region (Denver)",                 "USGS",  39.7543,-104.8797,
+  "USGS Woods Hole Coastal Science Center",       "USGS",  41.5250, -70.6710,
+  "USGS Columbia Environmental Research Center",  "USGS",  38.9387, -92.3341,
+  "USGS Patuxent Wildlife Research Center",       "USGS",  38.9980, -76.8155,
+  # ── CDC / EPA ────────────────────────────────────────────────────────────
+  "CDC / ATSDR (Atlanta)",                        "CDC",   33.7993, -84.3277,
+  "EPA Office of Research & Development (RTP)",   "EPA",   35.8905, -78.8751,
+  "EPA National Risk Management Lab (Cincinnati)","EPA",   39.1290, -84.5122
+) |>
+  mutate(institution_type = "federal_lab",
+         carnegie_class   = NA_character_,
+         city             = NA_character_,
+         state_abbr       = NA_character_)
+
+cat("Federal labs:", nrow(federal_labs), "\n")
+```
+
+```{r labs-map}
+labs_sf <- st_as_sf(federal_labs, coords = c("lon", "lat"), crs = 4326)
+
+ggplot() +
+  geom_sf(data = labs_sf, aes(color = agency), size = 2) +
+  labs(title = "Federal research labs included",
+       color = "Agency",
+       caption = "Coordinates verified against agency websites and OpenStreetMap") +
+  theme_void() +
+  theme(legend.position = "bottom")
+```
+
+---
+
+## Part 3: Combined Institution Dataset
+
+```{r combine}
+institutions <- bind_rows(
+  universities |> select(name, city, state_abbr, lat, lon,
+                          carnegie_class, institution_type),
+  federal_labs |> select(name, city, state_abbr, lat, lon,
+                          carnegie_class, institution_type)
+)
+
+institutions |>
+  count(institution_type, carnegie_class) |>
+  knitr::kable(caption = "Institution counts by type")
+```
+
+```{r combined-map}
+inst_sf <- st_as_sf(institutions, coords = c("lon", "lat"), crs = 4326)
+
+ggplot() +
+  geom_sf(data = inst_sf,
+          aes(color = institution_type, size = institution_type),
+          alpha = 0.7) +
+  scale_color_manual(values = c(university = "#2c7bb6", federal_lab = "#d7191c"),
+                     name = NULL) +
+  scale_size_manual(values  = c(university = 0.8, federal_lab = 2),
+                    guide   = "none") +
+  labs(title    = "All scientific institutions",
+       subtitle = paste0(sum(institutions$institution_type == "university"),
+                         " R1/R2 universities + ",
+                         sum(institutions$institution_type == "federal_lab"),
+                         " federal labs")) +
+  theme_void() +
+  theme(legend.position = "bottom")
+```
+
+```{r save-institutions}
+saveRDS(institutions, here("data", "institutions", "institutions.rds"))
+cat("Saved institutions.rds:", nrow(institutions), "rows\n")
+```
+
+---
+
+## Part 4: ZIP Code Distance Pipeline
+
+For each US ZIP code, we compute the geodesic distance (km) to the nearest
+institution using the Haversine formula. ZIP-code centroids come from
+`zipcodeR::zip_code_db`, which covers all ~40,000 US ZIP codes with no API
+calls required.
+
+We restrict to the continental US (latitude 24°–50°, longitude −125° to −66°)
+to match the participant sample and the institution coverage above.
+
+```{r zip-centroids}
+zips <- zip_code_db |>
+  filter(
+    !is.na(lat), !is.na(lng),
+    lat  > 24 & lat  < 50,
+    lng > -125 & lng < -66
+  ) |>
+  select(zip_code = zipcode, zip_lat = lat, zip_lon = lng)
+
+cat("ZIP codes in continental US:", nrow(zips), "\n")
+```
+
+```{r nearest-institution}
+# Convert to sf for fast nearest-neighbor search
+zips_sf  <- st_as_sf(zips, coords = c("zip_lon", "zip_lat"), crs = 4326)
+inst_sf2 <- st_as_sf(institutions, coords = c("lon", "lat"),  crs = 4326)
+
+# Find index of nearest institution for each ZIP code
+nearest_idx <- st_nearest_feature(zips_sf, inst_sf2)
+
+# Retrieve institution metadata for each matched row
+nearest_inst <- institutions[nearest_idx, ] |>
+  select(nearest_institution = name, institution_type)
+
+# Compute Haversine distance (km) between each ZIP centroid and its nearest institution
+inst_coords <- cbind(institutions$lon[nearest_idx],
+                     institutions$lat[nearest_idx])
+zip_coords  <- cbind(zips$zip_lon, zips$zip_lat)
+
+dist_km <- distHaversine(zip_coords, inst_coords) / 1000
+
+zipcode_distances <- bind_cols(zips, nearest_inst) |>
+  mutate(dist_inst_km = dist_km)
+
+head(zipcode_distances)
+```
+
+### Validation
+
+```{r validation}
+summary(zipcode_distances$dist_inst_km)
+```
+
+```{r spot-checks}
+# NYC (10001) → should be near 0; rural Montana (59931) → should be large
+zipcode_distances |>
+  filter(zip_code %in% c("10001", "59931", "90210", "60601", "73301")) |>
+  select(zip_code, nearest_institution, institution_type, dist_inst_km) |>
+  mutate(dist_inst_km = round(dist_inst_km, 1)) |>
+  knitr::kable(caption = "Spot checks: selected ZIP codes")
+```
+
+```{r dist-distribution}
+ggplot(zipcode_distances, aes(x = dist_inst_km)) +
+  geom_histogram(bins = 80, fill = "#2c7bb6", color = "white", linewidth = 0.2) +
+  scale_x_log10(labels = scales::comma) +
+  labs(
+    x        = "Distance to nearest institution (km, log scale)",
+    y        = "Number of ZIP codes",
+    title    = "Distribution of dist_inst_km across continental US ZIP codes",
+    subtitle = "Right-skewed → log-transform used in analysis"
+  ) +
+  theme_minimal(base_size = 12)
+```
+
+```{r save-distances}
+saveRDS(zipcode_distances, here("data", "institutions", "zipcode_distances.rds"))
+cat("Saved zipcode_distances.rds:", nrow(zipcode_distances), "rows\n")
+```
+
+---
+
+## Session Info
+
+```{r session-info}
+sessionInfo()
+```

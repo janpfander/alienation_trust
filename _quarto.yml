@@ -1,0 +1,41 @@
+project:
+  type: website
+  output-dir: docs
+  render:
+    - "*.qmd"
+    - "!analysis.qmd"
+
+freeze: auto
+
+website:
+  title: "Alienation & Trust"
+  site-url: https://janpfander.github.io/alienation_trust/
+  description: "Testing the alienation model of science distrust applied to climate scientists."
+  navbar:
+    left:
+      - href: preregistration/preregistration.qmd
+        text: "Preregistration"
+    right:
+      - text: "✉ Contact"
+        href: "mailto:{{< var email >}}"
+
+  page-footer:
+    background: light
+    left: |
+      <span class="faux-block">© {{< var years >}} Jan Pfänder</span>
+    right: |
+      <span class="faux-block">Made with R and [Quarto](https://quarto.org/)</span>
+      <span class="faux-block">[View the source on GitHub]({{< var github-url >}})</span>
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
+    toc-depth: 4
+    code-fold: true
+    link-external-newwindow: true
+
+editor: source
+
+bibliography: references.bib
