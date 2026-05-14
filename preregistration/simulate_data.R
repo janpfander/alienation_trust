@@ -225,7 +225,21 @@ dat <- bind_cols(dat, alien_inst_items, alien_social_items,
 ############################################################
 
 dat <- dat |>
-  mutate(dist_inst_km = exp(rnorm(N, mean = 3.5, sd = 1.2)))
+  mutate(
+    dist_inst_km   = exp(rnorm(N, mean = 3.5, sd = 1.2)),
+    # Per-category nearest distances (km). Each category's nearest can only be
+    # >= the overall nearest, so we add a non-negative offset to dist_inst_km.
+    dist_r1_km     = dist_inst_km + exp(rnorm(N, mean = 4.0, sd = 1.0)),
+    dist_r2_km     = dist_inst_km + exp(rnorm(N, mean = 3.5, sd = 1.0)),
+    dist_other4_km = dist_inst_km + exp(rnorm(N, mean = 2.5, sd = 1.0)),
+    dist_cc_km     = dist_inst_km + exp(rnorm(N, mean = 2.0, sd = 1.0)),
+    # Counts within 50 km (overall + per category). Sparse, right-skewed.
+    n_within_50km        = rpois(N, lambda = 5),
+    n_r1_within_50km     = rpois(N, lambda = 0.5),
+    n_r2_within_50km     = rpois(N, lambda = 0.7),
+    n_other4_within_50km = rpois(N, lambda = 2.5),
+    n_cc_within_50km     = rpois(N, lambda = 2.0)
+  )
 
 ############################################################
 # Primary outcome: Multidimensional trust (12 items, 0-100)
@@ -248,7 +262,9 @@ dat <- bind_cols(dat, trust_competence_items, trust_integrity_items,
     trust_multidimensional = rowMeans(cbind(
       trust_competence, trust_integrity, trust_benevolence, trust_openness
     )),
-    trust_post = r_slider(N)
+    trust_post    = r_slider(N),
+    distrust_post = r_slider(N)   # post-treatment single-item distrust;
+                                  # robustness outcome (control group only)
   )
 
 ############################################################

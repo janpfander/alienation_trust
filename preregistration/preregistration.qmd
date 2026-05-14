@@ -22,6 +22,20 @@ date: "2026-05-10"
 format:
   html:
     code-fold: false
+  pdf:
+    toc: true
+    toc-depth: 5
+    include-before-body:
+      text: |
+        \clearpage
+    colorlinks: true
+    tbl-colwidths: true
+    header-includes:
+      - \usepackage{float}
+      - \floatplacement{figure}{H}
+      - \floatplacement{table}{H}
+      - \usepackage{listings}
+      - \lstset{breaklines=true, basicstyle=\small\ttfamily}
 
 execute:
   echo: false
@@ -55,71 +69,175 @@ list.files(here("R/functions"), pattern = "\\.R$", full.names = TRUE) |>
 data <- readRDS(here("data/simulation/simulated_data.rds"))
 ```
 
-::: callout-note
-This preregistration has not yet been registered on the OSF and may change within the next days.
+
+::: {.callout-important}
+**Placeholder data.** The megastudy dataset used throughout is simulated random noise with the expected structure. The data has not been collected yet (except for a small pilot of N=200 to check for technical issues before the main survey launch---none of this data has been analyzed.)
 :::
 
 \clearpage
 
 # Background
 
-Trust in climate scientists is a critical determinant of climate change belief and policy support, yet it is declining and deeply polarized in the United States. Much of the existing literature explains distrust in scientists through individual-level psychological mechanisms: people distrust scientists because they lack scientific knowledge, engage in motivated reasoning, or hold conspiracist or populist thinking styles. These accounts share a common assumption — that distrust reflects some form of cognitive failure or irrationality on the part of the distruster.
+Earlier this year, the United States has formally withdrawn from the Paris Agreement for a second time. It has also imposed important budget cuts to research institutions, in particular research on climate change. In 2022, 24% of Americans believes agreed with the statment "climate change is a hoax and scientists touting its existence are lying." The share of Republicans and Republican-leaning independents who say the country should prioritize oil, coal and natural gas over wind and solar power has doubled to 71% over the last six years. @kennedyAmericansShiftingViews2026. Given the climate crisis, understanding theses trends in public opinon and politics is crucial to effectively act. 
 
-The *alienation model* of science distrust, developed by Gauchat [-@gauchat2011; -@gauchat2012politicization], offers a structurally grounded alternative. Rooted in the work of theorists including Beck [-@beck1992risk], Giddens [-@giddens1991modernity], and Habermas [-@habermas1989structural], the model argues that increasingly complex societies require increasingly specialized governance expertise, producing technocratic institutions run by knowledge elites. Those who are excluded from these institutions — who lack the cultural capital, social proximity, geographic access, or informational exposure to participate — experience a loss of agency and a sense of alienation. This alienation, the model predicts, rationally translates into distrust: people who have no influence over an institution's decisions are more vulnerable to its choices and have less reason to extend it trust [@desmondVulnerabilityTrust2023].
+A critical predictor of climate change belief and policy support is trust in climate scientists. To acknowledge climate change, assess its urgency, and find effective way of mitigate it, the public has to rely on climate scientists' findings. In the United states, as in other countries, climate scientists are less trusted than scientists in general [@ghasemiGapsPublicTrust2025]. Trust in climate scientists is also particularly polarized along partisan lines. 
 
-This framing has important implications. It suggests that distrust in climate scientists among demographically underrepresented groups — racial minorities, people with less education, rural residents — is not primarily a product of irrationality or misinformation, but a predictable response to structural exclusion. Despite its theoretical appeal, the alienation model has not yet been directly tested with respect to climate scientists. Gauchat's own empirical work tested only the high-level prediction that increasing technocratization would produce declining aggregate trust in science. More specific, individual-level predictions derived from the model remain untested.
+Much of the existing literature explains distrust in scientists through individual-level psychological mechanisms: people distrust scientists because they lack scientific knowledge, engage in motivated reasoning, or hold conspiracist or populist thinking styles. These accounts share a common assumption — that distrust reflects some form of cognitive failure or irrationality on the part of the distruster.
 
----
+The *alienation model* of science distrust, proposed by Gauchat [@gauchatCulturalAuthorityScience2011; @gauchatPoliticizationSciencePublic2012], offers an alternative. Rooted in the work of theorists, the model argues that increasingly complex societies require increasingly specialized governance expertise, producing technocratic institutions run by knowledge elites. Those who are excluded, or *alienated* from these institutions experience a loss of agency and, ultimately, distrust. 
+
+The alienation model stands in contrast to many individual-level psychological models, because it provides an explanation of distrust in science that does not need be irrantional: Trust is generally defined as accepting vulnerability towards someone [@mayerIntegrativeModelOrganizational1995a], and definitions of trust in science rely on the same idea [@wintterlinPredictingPublicTrust2022]. People who are alienated from an instutions---who have no influence over an institution's decisions---are more vulnerable to decisisons made by this institution [@desmondStatusDistrustScientific2022]. As a result, for a same level of trust, alienated people need to accept more vulnerability than other people. As a consequence, reduced levels of trust in scientific institutions might in fact be rational, for people with lower socio-economic status, who typically could be part of these institutions [@desmondStatusDistrustScientific2022]. 
+
+However, the alienation model lacks both a clear theoretical framefork for what alienation is, as well as a direct empirical test of the model. In his empirical work, @gauchatPoliticizationSciencePublic2012 only tested the high-level prediction that trust in science should have declined over time, given increasing technocratization, for which he did not find evidence. In this paper, we begin by defining alienation and proposing different theoretical dimensions. We then propose structural measures of alienation. Next, building on a large scale survey of 22,000 US adults, we test whether these structural measures are associated with subjective perceptions of alienation. We then test whether perceived alienation, in turn, is associated with lower trust in climate scientists. We further test whether perceptions of alienation are associated with lower trust in particular among people who have a strong need for epistemic autonomy---people who, e.g., want to figure things out for themselves instead of relying on others. Finally, we test some additional predictions of the alienation model, namely that perceptions of alienation should be associated with certain trust dimensions more than others, and that they should also be associated with 
 
 # Theoretical Framework
 
-We define alienation as a lack of access to climate scientists, climate science, and climate science institutions. In this research project, we focus on *perceived alienation*, based on people's self-reports. We distinguish four dimensions of perceived alienation, informed by research on psychological distance to science [@rutjensPsychologicalDistanceScience2022; @veckalovPsychologicalDistanceScience2024]:
+We define alienation as a lack of access to climate scientists, climate science, and climate science institutions. We distinguish between four dimensions of alienation, informed by research on psychological distance to science [@rutjensPsychologicalDistanceScience2025; @veckalovPsychologicalDistanceScience2024]:
 
-**Institutional alienation** refers to the lack of representation within and influence over scientific institutions. People who do not see themselves reflected in the demographics of climate scientists, or who feel they have no voice in how scientific knowledge is produced and used, experience institutional alienation.
+**Institutional alienation** refers to the lack of representation within and influence over scientific institutions. 
 
-**Social alienation** refers to the social distance between oneself and climate scientists as people---a sense that scientists inhabit a different social world, with different values, backgrounds, and life experiences.
+**Social alienation** refers to the social distance between oneself and climate scientists as people---different socio-demographic backgrounds and values. 
 
-**Spatial alienation** refers to geographic distance from scientific institutions. People who live far from universities, research centers, and other sites of scientific activity have fewer opportunities for incidental contact with scientists and their work.
+**Spatial alienation** refers to geographic distance from scientific institutions, and the perceived local impact of these institutions. 
 
-**Informational alienation** refers to limited exposure to scientific information in everyday life---through news, social media, personal conversations, or in-person events. People who rarely encounter scientific information are informationally distant from the scientific world.
+**Informational alienation** refers to limited exposure to scientific information---through education, but also through news, social media, personal conversations, or in-person events. 
 
-We propose that these four dimensions are empirically distinguishable and may have different relationships with trust in climate scientists. We test predictions about each dimension separately.
+In the measurement section, we attempt to translate these dimensions into specific measures of *structural* and *perceived* alienation. 
 
-# Hypotheses and Research Questions
+# Research Questions
 
-## Hypotheses
+## Structural predictors of alienation
 
-**H1 — Association between alienation and trust:** Perceptions of alienation are negatively associated with trust in climate scientists. 
+**RQ1a — Spatial distance and spatial alienation:** Do people who live further from scientific institutions — operationalized as geographic distance from the nearest postsecondary institution — report higher *spatial* alienation? This tests whether objective geographic distance predicts perceived distance. As robustness checks, we re-estimate the same association using per-category nearest distances (R1, R2, other 4-year, community college) and counts of institutions within 50 km.
 
-**H2 — Epistemic autonomy as moderator of the alienation-trust relationship:** Climate scientists claim epistemic authority over matters of public concern. People with a high need for epistemic autonomy, who are motivated to form their own judgments rather than defer to authorities, should be particularly distrusting of climate scientists when they experience alienation. We therefore predict that need for epistemic autonomy moderates the relationship between alienation and distrust, such that the alienation–distrust association is stronger among high-autonomy individuals.
+**RQ1b — Income and social alienation:** Do people with lower household income report higher *social* alienation? Climate-adjacent scientists earn substantially more than the median US household. This RQ tests whether participants who are economically distant from this earnings bracket also feel socially distant from scientists.
 
-For both hypotheses, we test the four dimensions of alienation separately. 
+**RQ1c — Demographic underrepresentation and institutional/social alienation:** Do people who are demographically underrepresented among climate scientists — by race or gender — report higher *institutional* and *social* alienation? This tests whether self-reported perceptions of alienation map onto objective indicators of demographic underrepresentation in the scientific workforce.
 
-## Research Questions
+We have no objective structural correlate for *informational* alienation; we therefore do not ask a parallel RQ for that dimension.
 
-**RQ1 — Structural predictors of institutional and social alienation:** Do people who are demographically underrepresented among climate scientists---by race, education, gender, or social class---report higher institutional and social alienation? This tests whether self-reported perceptions of alienation map onto objective indicators of structural underrepresentation.
+## Perceived alienation and trust
 
-**RQ2 — Structural predictors of spatial alienation:** Do people who live further from scientific institutions---operationalized as geographic distance from the nearest research university---report higher spatial alienation? This tests whether geographic distance predicts perceived distance.
+**RQ2 — Alienation predicts distrust:** Are perceptions of alienation associated with trust in climate scientists? We test the four dimensions of alienation separately.
 
-**RQ3 — Alienation and dimensions of trust:** Alienated people may still recognize climate scientists' technical competence, but have more reason to doubt their benevolence, integrity, and openness---dimensions of trust that reflect whether an institution acts in one's interest rather than merely whether it is capable. We therefore ask whether alienation is more strongly associated with distrust along the dimensions of benevolence, integrity, and openness than along the dimension of competence.
+**RQ3 — Epistemic autonomy as moderator:** People with a high need for epistemic autonomy, who are motivated to form their own judgments rather than defer to authorities, should be particularly distrusting of climate scientists when they experience alienation. Does need for epistemic autonomy moderate the relationship between alienation and distrust, such that the alienation–distrust association is stronger among high-autonomy individuals? We test the four dimensions of alienation separately.
 
-**RQ4 — Alienation and policy role:** People who are alienated from climate scientists may be more resistant to granting scientists a role in shaping public policy. We ask whether alienation predicts opposition to scientists having influence over climate policy.
+## Further predictions from the alienation model 
+
+**RQ4 — Alienation and dimensions of trust:** Alienated people may still recognize climate scientists' technical competence but have more reason to doubt their benevolence, integrity, and openness — dimensions of trust that reflect whether an institution acts in one's interest rather than merely whether it is capable. We therefore ask whether alienation is more strongly associated with distrust along the dimensions of benevolence, integrity, and openness than along the dimension of competence.
+
+**RQ5 — Alienation and policy role:** People who are alienated from climate scientists may be more resistant to granting scientists a role in shaping public policy. We ask whether alienation predicts opposition to scientists having influence over climate policy.
 
 # Data
 
-## Source
+## Structural alienation
 
-We use pre-treatment data from the **Strengthening trust in climate scientists megastudy** (N ≈ 22,000), a large collaborative experiment testing 20 interventions to strengthen trust in climate scientists in the United States. Participants are recruited from a national, non-probability opt-in panel (CloudResearch) with cross-quotas on gender × age and gender × race based on 2024 US Census Bureau population estimates.
+For the demographic and income composition of the US scientific workforce, we use the **American Community Survey (ACS) 5-year Public Use Microdata Sample**, 2018–22, accessed via the `tidycensus` R package. Occupation is identified using Census detailed occupation codes (`OCCP`); we report two scopes — all research/academic occupations and climate-adjacent occupations (atmospheric, geological, ecological, environmental). Details and code are in `data-prep/scientist_demographics.qmd`.
 
-This project presents correlational analyses of the megastudy pre-treatment measures. No experimental comparisons are made. **No data has been collected yet**. 
+For the spatial distribution of scientific institutions, we use the **IPEDS Header/Directory file (HD2022)** from the National Center for Education Statistics, covering all US postsecondary institutions. ZIP-code centroid coordinates come from the `zipcodeR` R package. Details and code are in `data-prep/institutions.qmd`.
 
-## Ethics
+## Perceived alienation
 
-The megastudy has received ethics approval from Stanford University (IRB-85756) and ETH Zurich (26 ETHICS-093).
+We use pre-treatment data from the **Strengthening trust in climate scientists megastudy** (N ≈ 22,000), a large collaborative experiment testing 20 interventions to strengthen trust in climate scientists in the United States. Participants are recruited from a national, non-probability opt-in panel (CloudResearch) with cross-quotas on gender × age and gender × race based on 2024 US Census Bureau population estimates. A detailed preregistration of the project can found on this webiste: [https://janpfander.github.io/trust_climate_scientists/preregistration/preregistration.html](https://janpfander.github.io/trust_climate_scientists/preregistration/preregistration.html)
+
+This project presents correlational analyses of the megastudy pre-treatment measures. **At the point of this registration, a small pilot sample (N=200) has been run for the megastudy project, to test technical issues. The main data collection has not begun. No data has been analyzed.**. 
 
 # Measures
 
-## Alienation from climate science
+## Structural alienation
+
+To measure social and institutional distance, we assess the demographic representativeness of both scientists in general and climate scientists more specifically. We assess the race/ethnicity and gender composition, as well as wages of US scientists with the ACS 5-year PUMS (2018–22). As shown in @fig-acs-demographics, women and racial minorities are underrepresented among both scientists in general and climate scientists in particular. @fig-acs-wages shows the distribution of wages earned by climate scientists, comparing it to the median American wage. To measure spatial distance, we compute the geodesic distance (`dist_inst_km`) from every continental US ZIP-code centroid to the nearest postsecondary institution listed in IPEDS HD2022, using ZIP-code centroid coordinates (@fig-distance). The universe includes all institutions granting degrees at the 2-year level or higher; trade and cosmetology schools are excluded. We use `log(dist_inst_km)` in analyses (right-skewed distribution). As robustness checks we additionally compute per-category nearest distances (`dist_r1_km`, `dist_r2_km`, `dist_other4_km`, `dist_cc_km`) and counts within a 50 km radius (`n_within_50km` and per-category variants). We do not provide a structural measure for informational distance.
+
+```{r}
+#| label: fig-acs-demographics
+#| fig-cap: "Race/ethnicity and gender composition of US scientists, comparing all research occupations (left) and climate-adjacent occupations (right). Source: ACS PUMS 2018–22, employed civilians, weighted; race 'Unknown' excluded."
+#| fig-width: 8
+#| fig-height: 4
+
+acs_path <- here("data/scientist_demographics/census_pus/acs_demographics.rds")
+
+if (file.exists(acs_path)) {
+  acs_demo <- readRDS(acs_path)
+
+  acs_demo |>
+    filter(scope %in% c("All research occupations", "Climate-adjacent"),
+           race_eth != "Unknown") |>
+    group_by(scope) |>
+    mutate(pct = round(100 * n / sum(n), 1)) |>
+    ungroup() |>
+    mutate(scope = factor(scope,
+      levels = c("All research occupations", "Climate-adjacent"))) |>
+    ggplot(aes(x = pct, y = reorder(race_eth, pct), fill = gender)) +
+    geom_col(position = "dodge", width = 0.7) +
+    scale_fill_manual(
+      values = c(Men = plot_palette[1], Women = plot_palette[4]),
+      name   = NULL
+    ) +
+    scale_x_continuous(expand = expansion(mult = c(0, 0.05))) +
+    facet_wrap(~scope) +
+    labs(x = "Share of employed workers (%)", y = NULL) +
+    plot_theme
+} else {
+  cat("Demographic data not yet generated. Render `data-prep/scientist_demographics.qmd` to populate.\n")
+}
+```
+
+```{r}
+#| label: fig-acs-wages
+#| fig-cap: "Wage distribution of climate-adjacent scientists (ACS PUMS 2018–22, weighted, employed civilians). Dashed line: US median earnings for all workers 16+ (~$48,060 in 2022)."
+#| fig-width: 7
+#| fig-height: 3.5
+
+income_path <- here("data/scientist_demographics/census_pus/acs_income.rds")
+
+if (file.exists(income_path)) {
+  acs_income <- readRDS(income_path)
+
+  acs_income |>
+    filter(scope == "Climate-adjacent", !is.na(wage)) |>
+    ggplot(aes(x = wage / 1000, weight = weight)) +
+    geom_density(linewidth = 0.8, adjust = 1.5,
+                 color = plot_palette[1], fill = plot_palette[1], alpha = 0.25) +
+    geom_vline(xintercept = 48.06, linetype = "dashed",
+               color = "grey40", linewidth = 0.4) +
+    annotate("text", x = 51, y = Inf, vjust = 1.5, hjust = 0,
+             label = "US median worker", size = 3, color = "grey40") +
+    scale_x_continuous(
+      limits = c(0, 300),
+      labels = scales::dollar_format(suffix = "k", scale = 1)
+    ) +
+    labs(x = "Annual wage / salary income", y = "Density") +
+    plot_theme
+} else {
+  cat("Income data not yet generated. Render `data-prep/scientist_demographics.qmd` to populate.\n")
+}
+```
+
+```{r}
+#| label: fig-distance
+#| fig-cap: "Distribution of log-distance to the nearest postsecondary institution (IPEDS HD2022, ICLEVEL 1–2) across continental US ZIP codes."
+#| fig-width: 6.5
+#| fig-height: 3.5
+
+dist_path <- here("data/institutions/zipcode_distances.rds")
+
+if (file.exists(dist_path)) {
+  zip_dist <- readRDS(dist_path)
+
+  zip_dist |>
+    ggplot(aes(x = log(dist_inst_km))) +
+    geom_histogram(bins = 50, fill = plot_palette[1], color = "white", alpha = 0.9) +
+    labs(
+      x = "log(distance to nearest institution, km)",
+      y = "ZIP codes"
+    ) +
+    plot_theme
+} else {
+  cat("Distance data not yet generated. Render `data-prep/institutions.qmd` to populate.\n")
+}
+```
+
+## Perceived alienation
 
 Except for informational alienation, all items use a 7-point agree/disagree response scale (1 = *strongly disagree*, 7 = *strongly agree*). Higher scores indicate greater alienation. We will use composite scores (the mean) of all items present in one dimension. 
 
@@ -153,17 +271,29 @@ Response options: 1 = *Never*, 2 = *Rarely*, 3 = *Occasionally*, 4 = *Frequently
 
 ## Trust in climate scientists
 
-### Single-item trust
+### Single-item trust (primary outcome)
 
-The primary outcome is a single outcome trust measure, assessed pre-treatment in the megastudy.
+The primary outcome is a single-item trust measure, assessed *pre-treatment* in the megastudy (`trust_pre`):
 
 "How much do you trust climate scientists?" (slider, 0–100).
 
-## Multidimensional trust (secondary outcome, 12 items)
+Because it is measured pre-treatment, this item is available for the full sample (N ≈ 22,000) and is not confounded by intervention exposure.
 
-For a robustness check, we use a more detailed 12-item trust scale covering four subdimensions (3 items each), assessed on 0–100 sliders (0 = most negative, 100 = most positive); see @tbl-trust-scale. Subdimension composites are computed as the mean of the three items within each subdimension. The overall composite (`trust_multidimensional`) is the mean of all 12 items. 
+### Single-item distrust (robustness outcome)
 
-The reason this scale is used only for a robustness check is that, in the megastudy, it is asked "post-treatment". We can therefore only use answers from the control group for unconfounded results.
+As a robustness check, we also use a single-item distrust measure (`distrust_post`):
+
+"How much do you distrust climate scientists?" (slider, 0–100).
+
+Trust and distrust are sometimes treated as opposite ends of a single continuum, but they may also capture distinct constructs (e.g., one can simultaneously trust scientists on some questions and distrust them on others). Running our trust analyses in parallel with distrust as the outcome allows us to check whether the two measures yield similar inferences.
+
+Because this item is asked *post-treatment* in the megastudy, robustness analyses using `distrust_post` are restricted to **control group participants only** to avoid confounding by intervention exposure.
+
+### Multidimensional trust (robustness outcome for RQ4, 12 items)
+
+For RQ4 (alienation and the dimensions of trust), we use a more detailed 12-item trust scale covering four subdimensions (3 items each), assessed on 0–100 sliders (0 = most negative, 100 = most positive); see @tbl-trust-scale. Subdimension composites are computed as the mean of the three items within each subdimension. The overall composite (`trust_multidimensional`) is the mean of all 12 items.
+
+As with single-item distrust, this scale is asked *post-treatment* in the megastudy, so analyses using it are restricted to **control group participants only**.
 
 ```{r}
 #| label: tbl-trust-scale
@@ -196,19 +326,26 @@ tibble::tribble(
 
 We will use a composite measure (mean) of all items items, reverse-coding item 6.
 
-## Structural indicators (for RQ1 and RQ2)
+## Demographics
 
+- **ZIP code** participant's zipcode
+- **Income**: 5-level ordinal (\<\$30k to ≥\$168k). For RQ2, we convert each bracket to its midpoint and divide by $\sqrt{\text{household size}}$ to obtain equivalised income.
+- **Household size**: 6-level ordinal (1 to 6 or more). Used in RQ2 to compute the equivalence scale.
 - **Race/ethnicity**: White, Black, Hispanic, Asian, Other (categorical)
-- **Education**: 6-level ordinal (less than high school → doctorate)
 - **Gender**: Male, Female, Other
-- **Income**: 5-level ordinal (\<\$30k to ≥\$168k)
-- **Geographic distance** (`dist_inst_km`): distance (km) from the participant's ZIP code to the nearest scientific institution (R1/R2 research university or major federal research lab), computed using ZIP-code centroid coordinates
 
-## Policy role of scientists (for RQ4)
+## Policy role of scientists (4 items)
 
-Four items assessing support for scientists having a role in climate policy (e.g., collaborating with policymakers, advocating for policies, communicating findings; 0–100 sliders). We will use a composite score (mean) of all items.
+Four items assessing support for climate scientists having a role in the policy-making process, adapted from @colognaTrustScientistsTheir2025. We removed two items from their scale: one because it was not strictly applicable to the construct ("Climate scientists should remain independent from the policy-making process"), and the other because it was not policy-related ("Climate scientists should communicate their findings to the general public"). We also use sliders rather than a 5-point Likert response scale.
 
----
+"To what extent do you agree or disagree with the following statements?" (slider, 0 = *Strongly disagree*, 100 = *Strongly agree*):
+
+1. *Climate scientists should work closely with policy makers to integrate scientific results into policy-making.*
+2. *Climate scientists should actively advocate for specific policies.*
+3. *Climate scientists should communicate their findings to policy makers.*
+4. *Climate scientists should be more involved in the policy-making process.*
+
+We will use a composite score (`policy_role_mean`), the mean of all four items.
 
 # Analysis Plan
 
@@ -218,29 +355,250 @@ All models are estimated using **OLS regression with heteroskedasticity-robust s
 
 Code chunks below demonstrate each analysis on simulated data. Function definitions are printed before their first use so the exact model specification is part of the preregistration record.
 
-## H1: Association between alienation and trust
-
-For each of the four alienation dimensions, we run separate regressions. We regress the single-item pre-treatment trust measure (`trust_pre`) on the respective alienation composite. We do not include covariates. BH correction is applied across the four tests (one per dimension).
-
-```{r h1-function}
+```{r ols-function}
 #| results: asis
 print_a_function_from_file("run_ols_model")
 ```
 
-```{r h1-models}
+```{r alienation-dims}
 #| echo: true
 
 alienation_dims <- c(
   "alien_inst_mean", "alien_social_mean",
   "alien_spatial_mean", "alien_info_mean"
 )
+```
 
-h1_results <- map_dfr(alienation_dims, \(pred)
+## RQ1a: Spatial distance and spatial alienation
+
+We regress spatial alienation on log-transformed geographic distance to the nearest postsecondary institution. We do not include covariates. This is a single test; no BH correction needed.
+
+```{r rq1a-model}
+#| echo: true
+
+rq1a_result <- run_ols_model(
+  data |> mutate(log_dist_inst_km = log(dist_inst_km)),
+  outcome   = "alien_spatial_mean",
+  predictor = "log_dist_inst_km"
+)
+
+rq1a_result |>
+  select(predictor, estimate, std.error, statistic, p.value, n) |>
+  mutate(predictor = "log(distance to institution, km)") |>
+  rounded_numbers() |>
+  rename(Predictor = predictor, Beta = estimate, SE = std.error,
+         t = statistic, p = p.value, N = n) |>
+  tt(caption = "RQ1a: Geographic distance predicting spatial alienation")
+```
+
+### Robustness: distance to each institution category
+
+The primary measure collapses all institution categories — R1, R2, other 4-year, and community college — into a single "nearest institution." It is plausible that proximity to different kinds of institutions has different psychological consequences. In particular, community colleges are far more numerous and demographically more representative of their surrounding communities than research universities, so proximity to a community college may reduce spatial alienation more strongly (or, conversely, only research-active institutions may matter). To examine this, we re-estimate the RQ1a model four times, replacing `log(dist_inst_km)` with the log-distance to the nearest institution of each category (`dist_r1_km`, `dist_r2_km`, `dist_other4_km`, `dist_cc_km`). BH correction is applied across the four tests.
+
+```{r rq1a-by-category}
+#| echo: true
+
+distance_vars <- c("dist_r1_km", "dist_r2_km", "dist_other4_km", "dist_cc_km")
+
+rq1a_category_results <- map_dfr(distance_vars, \(d)
+  run_ols_model(
+    data |> mutate(log_d = log(.data[[d]])),
+    outcome   = "alien_spatial_mean",
+    predictor = "log_d"
+  ) |>
+    mutate(predictor = d)
+) |>
+  mutate(p_adjusted = p.adjust(p.value, method = "BH"))
+
+rq1a_category_results |>
+  select(predictor, estimate, std.error, statistic, p.value, p_adjusted, n) |>
+  mutate(predictor = recode(predictor,
+    dist_r1_km     = "R1",
+    dist_r2_km     = "R2",
+    dist_other4_km = "Other 4-year",
+    dist_cc_km     = "Community college"
+  )) |>
+  rounded_numbers() |>
+  rename(
+    Category = predictor, Beta = estimate, SE = std.error,
+    t = statistic, p = p.value, `p (BH-adj)` = p_adjusted, N = n
+  ) |>
+  tt(caption = "RQ1a robustness: log(distance to nearest institution) predicting spatial alienation, by category")
+```
+
+```{r rq1a-by-category-plot}
+#| fig-cap: "RQ1a robustness: standardized association between log-distance to the nearest institution of each category and spatial alienation. Colored points: BH-adjusted p < .05."
+
+rq1a_category_results |>
+  mutate(predictor = recode(predictor,
+    dist_r1_km     = "R1",
+    dist_r2_km     = "R2",
+    dist_other4_km = "Other 4-year",
+    dist_cc_km     = "Community college"
+  )) |>
+  plot_coefficients(label_col = "predictor",
+                    title     = "RQ1a robustness: distance by institution category")
+```
+
+### Robustness: institution density (count within 50 km)
+
+As a second robustness check, we use a count-based measure of local "science density": the number of institutions within a 50 km radius of the participant's ZIP-code centroid. This shifts the construct from "distance to the single closest institution" to "how many institutions are nearby." We re-estimate the model four times, once per category, using `log(1 + n_X_within_50km)` (log-1-plus to accommodate zeros). BH correction is applied across the four tests.
+
+```{r rq1a-density}
+#| echo: true
+
+density_vars <- c("n_r1_within_50km", "n_r2_within_50km",
+                  "n_other4_within_50km", "n_cc_within_50km")
+
+rq1a_density_results <- map_dfr(density_vars, \(v)
+  run_ols_model(
+    data |> mutate(log_n = log1p(.data[[v]])),
+    outcome   = "alien_spatial_mean",
+    predictor = "log_n"
+  ) |>
+    mutate(predictor = v)
+) |>
+  mutate(p_adjusted = p.adjust(p.value, method = "BH"))
+
+rq1a_density_results |>
+  select(predictor, estimate, std.error, statistic, p.value, p_adjusted, n) |>
+  mutate(predictor = recode(predictor,
+    n_r1_within_50km     = "R1",
+    n_r2_within_50km     = "R2",
+    n_other4_within_50km = "Other 4-year",
+    n_cc_within_50km     = "Community college"
+  )) |>
+  rounded_numbers() |>
+  rename(
+    Category = predictor, Beta = estimate, SE = std.error,
+    t = statistic, p = p.value, `p (BH-adj)` = p_adjusted, N = n
+  ) |>
+  tt(caption = "RQ1a robustness: log(1 + count within 50 km) predicting spatial alienation, by category")
+```
+
+## RQ1b: Income and social alienation
+
+We regress social alienation on household income, entered as a 5-level categorical predictor (lowest bracket, "Less than \$30,000", as reference). We do not include covariates. BH correction is applied across the four bracket-vs-reference tests.
+
+```{r rq1b-model}
+#| echo: true
+
+rq1b_result <- run_ols_model(
+  data,
+  outcome   = "alien_social_mean",
+  predictor = "income"
+) |>
+  mutate(p_adjusted = p.adjust(p.value, method = "BH"))
+
+rq1b_result |>
+  select(term, estimate, std.error, statistic, p.value, p_adjusted, n) |>
+  mutate(term = recode(str_remove(term, "^income"),
+    "$30,000 to $55,999"   = "30k–56k",
+    "$56,000 to $99,999"   = "56k–100k",
+    "$100,000 to $167,999" = "100k–168k",
+    "$168,000 or more"     = "168k+"
+  )) |>
+  rounded_numbers() |>
+  rename(
+    `Income bracket (vs. <30k)` = term, Beta = estimate, SE = std.error,
+    t = statistic, p = p.value, `p (BH-adj)` = p_adjusted, N = n
+  ) |>
+  tt(caption = "RQ1b: Household income bracket predicting social alienation")
+```
+
+### Robustness: equivalised household income
+
+As a robustness check we re-estimate with a continuous, equivalised income measure, which adjusts for household size using the square-root scale: $\text{income}_{\text{equiv}} = \text{income} / \sqrt{\text{household size}}$. The square-root scale is a standard adjustment that captures economies of scale within a household without requiring separate adult/child counts. Both income and household size are measured as brackets, which we convert to midpoints before computing the ratio (top bracket "$168,000 or more" top-coded at \$200k; household size "6 or more" treated as 6 — conservative). The equivalised value is log-transformed before standardisation (right-skewed distribution). This is a single test; no BH correction needed.
+
+```{r rq1b-robust-equiv}
+#| echo: true
+
+# Bracket midpoints. Top bracket ("$168,000 or more") is top-coded at $200k.
+income_midpoints <- c(
+  "Less than $30,000"    = 15000,
+  "$30,000 to $55,999"   = 43000,
+  "$56,000 to $99,999"   = 78000,
+  "$100,000 to $167,999" = 134000,
+  "$168,000 or more"     = 200000
+)
+
+household_midpoints <- c(
+  "1" = 1, "2" = 2, "3" = 3, "4" = 4, "5" = 5, "6 or more" = 6
+)
+
+rq1b_equiv_data <- data |>
+  mutate(
+    income_usd       = income_midpoints[as.character(income)],
+    hh_size_num      = household_midpoints[as.character(household_size)],
+    income_equiv     = income_usd / sqrt(hh_size_num),
+    log_income_equiv = log(income_equiv)
+  )
+
+rq1b_equiv_result <- run_ols_model(
+  rq1b_equiv_data,
+  outcome   = "alien_social_mean",
+  predictor = "log_income_equiv"
+)
+
+rq1b_equiv_result |>
+  select(predictor, estimate, std.error, statistic, p.value, n) |>
+  mutate(predictor = "log(equivalised household income)") |>
+  rounded_numbers() |>
+  rename(Predictor = predictor, Beta = estimate, SE = std.error,
+         t = statistic, p = p.value, N = n) |>
+  tt(caption = "RQ1b robustness: Equivalised household income predicting social alienation")
+```
+
+## RQ1c: Demographic underrepresentation and institutional/social alienation
+
+We regress each alienation outcome (`alien_inst_mean`, `alien_social_mean`) separately on each structural predictor: race (White as reference) and gender (Male as reference). Each predictor is entered in its own model; we do not include covariates. BH correction is applied within each alienation outcome across structural predictors.
+
+```{r rq1c-models}
+#| echo: true
+
+structural_preds <- c("race", "gender")
+rq1c_outcomes    <- c("alien_inst_mean", "alien_social_mean")
+
+rq1c_results <- map_dfr(rq1c_outcomes, \(out)
+  map_dfr(structural_preds, \(pred)
+    run_ols_model(
+      data,
+      outcome   = out,
+      predictor = pred
+    )
+  ) |>
+    mutate(p_adjusted = p.adjust(p.value, method = "BH"),
+           outcome    = out)
+)
+
+rq1c_results |>
+  select(outcome, predictor, term, estimate, std.error, p.value, p_adjusted) |>
+  mutate(
+    outcome   = str_remove(outcome, "_mean") |> str_remove("alien_") |> str_to_title(),
+    predictor = str_replace_all(predictor, "_", " ") |> str_to_title(),
+    term      = str_replace_all(term, "_", " ")
+  ) |>
+  rounded_numbers() |>
+  rename(
+    Outcome = outcome, Variable = predictor, Level = term,
+    Beta = estimate, SE = std.error, p = p.value, `p (BH-adj)` = p_adjusted
+  ) |>
+  tt(caption = "RQ1c: Race and gender predicting institutional and social alienation")
+```
+
+## RQ2: Alienation and trust
+
+For each of the four alienation dimensions, we run separate regressions. We regress the single-item pre-treatment trust measure (`trust_pre`) on the respective alienation composite. We do not include covariates. BH correction is applied across the four tests (one per dimension).
+
+```{r rq2-models}
+#| echo: true
+
+rq2_results <- map_dfr(alienation_dims, \(pred)
   run_ols_model(data, outcome = "trust_pre", predictor = pred)
 ) |>
   mutate(p_adjusted = p.adjust(p.value, method = "BH"))
 
-h1_results |>
+rq2_results |>
   select(predictor, estimate, std.error, statistic, p.value, p_adjusted, n) |>
   mutate(predictor = str_remove(predictor, "_mean") |>
            str_remove("alien_") |> str_to_title()) |>
@@ -249,13 +607,13 @@ h1_results |>
     Dimension = predictor, Beta = estimate, SE = std.error,
     t = statistic, p = p.value, `p (BH-adj)` = p_adjusted, N = n
   ) |>
-  tt(caption = "H1: Effect of alienation dimensions on single-item trust (standardized beta, HC2 SEs)")
+  tt(caption = "RQ2: Effect of alienation dimensions on single-item trust (standardized beta, HC2 SEs)")
 ```
 
-```{r h1-plot}
-#| fig-cap: "H1: Standardized associations between alienation dimensions and single-item trust (trust_pre). Colored points: BH-adjusted p < .05."
+```{r rq2-plot}
+#| fig-cap: "RQ2: Standardized associations between alienation dimensions and single-item trust (trust_pre). Colored points: BH-adjusted p < .05."
 
-h1_results |>
+rq2_results |>
   mutate(predictor = recode(predictor,
     alien_inst_mean    = "Institutional",
     alien_social_mean  = "Social",
@@ -263,54 +621,84 @@ h1_results |>
     alien_info_mean    = "Informational"
   )) |>
   plot_coefficients(label_col = "predictor",
-                    title     = "H1: Alienation and Trust in Climate Scientists")
+                    title     = "RQ2: Alienation and Trust in Climate Scientists")
 ```
 
-## H2: Epistemic autonomy as moderator
+### Robustness: single-item distrust (control group only)
+
+We re-run the same four regressions using single-item distrust (`distrust_post`) as the outcome. Because distrust is measured post-treatment in the megastudy, this analysis is restricted to control-group participants. BH correction is applied across the four tests.
+
+```{r rq2-distrust-models}
+#| echo: true
+
+rq2_distrust_results <- map_dfr(alienation_dims, \(pred)
+  run_ols_model(
+    data |> filter(condition == "control"),
+    outcome   = "distrust_post",
+    predictor = pred
+  )
+) |>
+  mutate(p_adjusted = p.adjust(p.value, method = "BH"))
+
+rq2_distrust_results |>
+  select(predictor, estimate, std.error, statistic, p.value, p_adjusted, n) |>
+  mutate(predictor = str_remove(predictor, "_mean") |>
+           str_remove("alien_") |> str_to_title()) |>
+  rounded_numbers() |>
+  rename(
+    Dimension = predictor, Beta = estimate, SE = std.error,
+    t = statistic, p = p.value, `p (BH-adj)` = p_adjusted, N = n
+  ) |>
+  tt(caption = "RQ2 robustness: Effect of alienation dimensions on single-item distrust (control group only)")
+```
+
+## RQ3: Epistemic autonomy as moderator
 
 For each alienation dimension, we estimate an interaction model:
 
 $$
-\text{trust\_pre} \sim \text{alienation}_d \times \text{epist\_auton\_mean} + \text{age} + \text{gender} + \text{race}
+\text{trust\_pre} \sim \text{alienation}_d \times \text{epist\_auton\_mean}
 $$
 
-We report the interaction coefficient (alienation × epistemic autonomy) for each dimension, with BH correction across the four interaction tests.
+We do not include covariates. We report the interaction coefficient (alienation × epistemic autonomy) for each dimension, with BH correction across the four interaction tests.
 
-```{r h2-function}
+```{r rq3-function}
 #| results: asis
 print_a_function_from_file("run_interaction_model")
 ```
 
-```{r h2-models}
+```{r rq3-models}
 #| echo: true
 
-h2_results <- map_dfr(alienation_dims, \(pred)
+rq3_results <- map_dfr(alienation_dims, \(pred)
   run_interaction_model(
     data,
-    outcome    = "trust_pre",
-    predictor  = pred,
-    moderator  = "epist_auton_mean",
-    covariates = c("age", "gender", "race")
+    outcome   = "trust_pre",
+    predictor = pred,
+    moderator = "epist_auton_mean"
   )
 ) |>
   filter(str_detect(term, ":")) |>
   mutate(p_adjusted = p.adjust(p.value, method = "BH"))
 
-h2_results |>
+rq3_results |>
   select(predictor, moderator, estimate, std.error, statistic, p.value, p_adjusted, n) |>
-  mutate(predictor = str_remove(predictor, "_mean") |>
-           str_remove("alien_") |> str_to_title()) |>
+  mutate(
+    predictor = str_remove(predictor, "_mean") |>
+                  str_remove("alien_") |> str_to_title(),
+    moderator = "Epistemic autonomy"
+  ) |>
   rounded_numbers() |>
   rename(
     `Alienation dim.` = predictor, Moderator = moderator,
     Beta = estimate, SE = std.error, t = statistic,
     p = p.value, `p (BH-adj)` = p_adjusted, N = n
   ) |>
-  tt(caption = "H2: Interaction of each alienation dimension with epistemic autonomy predicting trust_pre")
+  tt(caption = "RQ3: Interaction of each alienation dimension with epistemic autonomy predicting single-item trust")
 ```
 
-```{r h2-plot}
-#| fig-cap: "H2 (example: institutional alienation): Predicted trust across epistemic autonomy levels for low vs. high institutional alienation."
+```{r rq3-plot}
+#| fig-cap: "RQ3 (example: institutional alienation): Predicted trust across epistemic autonomy levels for low vs. high institutional alienation."
 
 plot_interaction(
   data,
@@ -323,99 +711,72 @@ plot_interaction(
 )
 ```
 
-## RQ1: Structural predictors of institutional and social alienation
+### Robustness: single-item distrust (control group only)
 
-We regress each alienation outcome (`alien_inst_mean`, `alien_social_mean`) separately on each structural predictor: race (White as reference), education, gender (Male as reference), and social class (Middle class as reference). Each predictor is entered in a separate model that adjusts for age and the remaining demographic covariates. BH correction is applied within each alienation outcome across all structural predictors.
+We re-estimate the same interaction model with `distrust_post` as the outcome, restricted to control-group participants. BH correction is applied across the four interaction tests.
 
-```{r rq1-models}
+```{r rq3-distrust-models}
 #| echo: true
 
-structural_preds <- c("race", "education", "gender", "social_class")
-rq1_outcomes     <- c("alien_inst_mean", "alien_social_mean")
+rq3_distrust_results <- map_dfr(alienation_dims, \(pred)
+  run_interaction_model(
+    data |> filter(condition == "control"),
+    outcome   = "distrust_post",
+    predictor = pred,
+    moderator = "epist_auton_mean"
+  )
+) |>
+  filter(str_detect(term, ":")) |>
+  mutate(p_adjusted = p.adjust(p.value, method = "BH"))
 
-rq1_results <- map_dfr(rq1_outcomes, \(out)
-  map_dfr(structural_preds, \(pred)
-    run_ols_model(
-      data,
-      outcome    = out,
-      predictor  = pred,
-      covariates = c("age", setdiff(structural_preds, pred))
-    )
-  ) |>
-    mutate(p_adjusted = p.adjust(p.value, method = "BH"),
-           outcome    = out)
-)
-
-rq1_results |>
-  select(outcome, predictor, term, estimate, std.error, p.value, p_adjusted) |>
+rq3_distrust_results |>
+  select(predictor, moderator, estimate, std.error, statistic, p.value, p_adjusted, n) |>
   mutate(
-    outcome   = str_remove(outcome, "_mean") |> str_remove("alien_") |> str_to_title(),
-    predictor = str_replace_all(predictor, "_", " ") |> str_to_title(),
-    term      = str_replace_all(term, "_", " ")
+    predictor = str_remove(predictor, "_mean") |>
+                  str_remove("alien_") |> str_to_title(),
+    moderator = "Epistemic autonomy"
   ) |>
   rounded_numbers() |>
   rename(
-    Outcome = outcome, Variable = predictor, Level = term,
-    Beta = estimate, SE = std.error, p = p.value, `p (BH-adj)` = p_adjusted
+    `Alienation dim.` = predictor, Moderator = moderator,
+    Beta = estimate, SE = std.error, t = statistic,
+    p = p.value, `p (BH-adj)` = p_adjusted, N = n
   ) |>
-  tt(caption = "RQ1: Structural predictors of institutional and social alienation")
+  tt(caption = "RQ3 robustness: Interaction of alienation × epistemic autonomy predicting single-item distrust (control group only)")
 ```
 
-## RQ2: Structural predictor of spatial alienation
-
-We regress spatial alienation on log-transformed geographic distance to the nearest research university, adjusting for age, gender, race, and education. This is a single test; no BH correction needed.
-
-```{r rq2-model}
-#| echo: true
-
-rq2_result <- run_ols_model(
-  data |> mutate(log_dist_inst_km = log(dist_inst_km)),
-  outcome    = "alien_spatial_mean",
-  predictor  = "log_dist_inst_km",
-  covariates = c("age", "gender", "race", "education")
-)
-
-rq2_result |>
-  select(predictor, estimate, std.error, statistic, p.value, n) |>
-  mutate(predictor = "log(distance to university, km)") |>
-  rounded_numbers() |>
-  rename(Predictor = predictor, Beta = estimate, SE = std.error,
-         t = statistic, p = p.value, N = n) |>
-  tt(caption = "RQ2: Geographic distance predicting spatial alienation")
-```
-
-## RQ3: Alienation and dimensions of trust
+## RQ4: Alienation and dimensions of trust
 
 The multidimensional trust scale is measured post-treatment in the megastudy. To obtain unconfounded estimates, we restrict this analysis to **control group participants only**. For each of the four alienation dimensions, we regress each trust subdimension separately and apply BH correction across the four subdimension tests within each alienation dimension.
 
-```{r rq3-models}
+```{r rq4-models}
 #| echo: true
 
 trust_dims  <- c("trust_competence", "trust_integrity",
                  "trust_benevolence", "trust_openness")
 data_control <- data |> filter(condition == "control")
 
-rq3_results <- map_dfr(alienation_dims, \(pred)
+rq4_results <- map_dfr(alienation_dims, \(pred)
   map_dfr(trust_dims, \(out)
     run_ols_model(data_control, outcome = out, predictor = pred)
   ) |>
     mutate(p_adjusted = p.adjust(p.value, method = "BH"))
 )
 
-rq3_results |>
+rq4_results |>
   filter(predictor == "alien_inst_mean") |>    # example: institutional alienation
   select(outcome, estimate, std.error, p.value, p_adjusted) |>
   mutate(outcome = str_remove(outcome, "trust_") |> str_to_title()) |>
   rounded_numbers() |>
   rename(Dimension = outcome, Beta = estimate, SE = std.error,
          p = p.value, `p (BH-adj)` = p_adjusted) |>
-  tt(caption = "RQ3 (example: institutional alienation): Effect on each trust subdimension (control group only)")
+  tt(caption = "RQ4 (example: institutional alienation): Effect on each trust subdimension (control group only)")
 ```
 
-```{r rq3-plot}
-#| fig-cap: "RQ3 (example: institutional alienation): Associations with each trust subdimension, control group only."
+```{r rq4-plot}
+#| fig-cap: "RQ4 (example: institutional alienation): Associations with each trust subdimension, control group only."
 
-rq3_results |>
+rq4_results |>
   filter(predictor == "alien_inst_mean") |>
   mutate(outcome = recode(outcome,
     trust_competence  = "Competence",
@@ -424,22 +785,22 @@ rq3_results |>
     trust_openness    = "Openness"
   )) |>
   plot_coefficients(label_col = "outcome",
-                    title = "RQ3: Institutional alienation and trust subdimensions")
+                    title = "RQ4: Institutional alienation and trust subdimensions")
 ```
 
-## RQ4: Alienation and policy role
+## RQ5: Alienation and policy role
 
-We regress policy role support (`policy_role_mean`) on each alienation dimension separately, without covariates (mirroring H1). BH correction across four tests.
+We regress policy role support (`policy_role_mean`) on each alienation dimension separately, without covariates. BH correction across four tests.
 
-```{r rq4-models}
+```{r rq5-models}
 #| echo: true
 
-rq4_results <- map_dfr(alienation_dims, \(pred)
+rq5_results <- map_dfr(alienation_dims, \(pred)
   run_ols_model(data, outcome = "policy_role_mean", predictor = pred)
 ) |>
   mutate(p_adjusted = p.adjust(p.value, method = "BH"))
 
-rq4_results |>
+rq5_results |>
   select(predictor, estimate, std.error, p.value, p_adjusted, n) |>
   mutate(predictor = str_remove(predictor, "_mean") |>
            str_remove("alien_") |> str_to_title()) |>
@@ -448,13 +809,13 @@ rq4_results |>
     Dimension = predictor, Beta = estimate, SE = std.error,
     p = p.value, `p (BH-adj)` = p_adjusted, N = n
   ) |>
-  tt(caption = "RQ4: Alienation dimensions predicting policy role support")
+  tt(caption = "RQ5: Alienation dimensions predicting policy role support")
 ```
 
-```{r rq4-plot}
-#| fig-cap: "RQ4: Alienation dimensions and support for scientists' policy role."
+```{r rq5-plot}
+#| fig-cap: "RQ5: Alienation dimensions and support for scientists' policy role."
 
-rq4_results |>
+rq5_results |>
   mutate(predictor = recode(predictor,
     alien_inst_mean    = "Institutional",
     alien_social_mean  = "Social",
@@ -462,25 +823,65 @@ rq4_results |>
     alien_info_mean    = "Informational"
   )) |>
   plot_coefficients(label_col = "predictor",
-                    title = "RQ4: Alienation and Policy Role Support")
+                    title = "RQ5: Alienation and Policy Role Support")
 ```
 
 ---
 
 # Multiple Comparisons
 
-We apply BH-FDR correction **within each hypothesis and research question separately** (not across all tests in the study). The correction sets apply to:
+We apply BH-FDR correction **within each research question separately** (not across all tests in the study). The correction sets apply to:
 
-- **H1**: 4 tests (one per alienation dimension; outcome = `trust_pre`)
-- **H2**: 4 tests (one interaction per alienation dimension; outcome = `trust_pre`)
-- **RQ1**: tests within each alienation outcome (institutional, social), across structural predictors
-- **RQ2**: 1 test — no correction needed
-- **RQ3**: 4 tests per alienation dimension (one per trust subdimension; control group only)
-- **RQ4**: 4 tests (one per alienation dimension; outcome = `policy_role_mean`)
+- **RQ1a**: 1 primary test — no correction needed. Two robustness families, each BH-corrected separately: (i) 4 per-category nearest-distance tests; (ii) 4 per-category 50 km count tests.
+- **RQ1b**: 4 primary tests (income bracket vs. lowest bracket), BH-corrected. Robustness: 1 test with continuous equivalised income — no correction needed.
+- **RQ1c**: within each alienation outcome (institutional, social), across structural predictors (race, gender)
+- **RQ2**: 4 tests (one per alienation dimension; outcome = `trust_pre`). Robustness: 4 parallel tests with `distrust_post` (control group only), corrected separately.
+- **RQ3**: 4 tests (one interaction per alienation dimension; outcome = `trust_pre`). Robustness: 4 parallel interaction tests with `distrust_post` (control group only), corrected separately.
+- **RQ4**: 4 tests per alienation dimension (one per trust subdimension; control group only)
+- **RQ5**: 4 tests (one per alienation dimension; outcome = `policy_role_mean`)
 
 ---
 
 # Supplementary Materials
+
+## PhD pipeline (IPEDS) vs. employed workforce (ACS)
+
+The main-body demographic figure (@fig-acs-demographics) draws on the employed workforce (ACS PUMS). For comparison, the IPEDS Completions file (C2022_A) gives the doctoral pipeline — who earned a PhD in 2021–22. Differences between the two indicate where demographic gaps widen or narrow between degree completion and employment.
+
+```{r}
+#| label: tbl-pipeline-vs-workforce
+#| tbl-cap: "Race/ethnicity composition of climate-adjacent scientists: PhD pipeline (IPEDS) vs. employed workforce (ACS). Non-resident alien and Unknown excluded."
+
+ipeds_path <- here("data/scientist_demographics/ipeds/ipeds_demographics.rds")
+acs_path   <- here("data/scientist_demographics/census_pus/acs_demographics.rds")
+
+if (file.exists(ipeds_path) && file.exists(acs_path)) {
+  ipeds_demo <- readRDS(ipeds_path)
+  acs_demo   <- readRDS(acs_path)
+
+  bind_rows(
+    ipeds_demo |>
+      filter(scope == "Climate-adjacent",
+             !race_eth %in% c("Non-resident alien", "Unknown")) |>
+      group_by(race_eth) |>
+      summarise(n = sum(n, na.rm = TRUE), .groups = "drop") |>
+      mutate(pct    = round(100 * n / sum(n), 1),
+             Source = "IPEDS (PhD pipeline, 2022)"),
+    acs_demo |>
+      filter(scope == "Climate-adjacent", race_eth != "Unknown") |>
+      group_by(race_eth) |>
+      summarise(n = sum(n), .groups = "drop") |>
+      mutate(pct    = round(100 * n / sum(n), 1),
+             Source = "ACS (employed workforce, 2018–22)")
+  ) |>
+    select(Source, `Race/ethnicity` = race_eth, `%` = pct) |>
+    pivot_wider(names_from = Source, values_from = `%`) |>
+    arrange(desc(`IPEDS (PhD pipeline, 2022)`)) |>
+    tt()
+} else {
+  cat("Demographic data not yet generated. Render `data-prep/scientist_demographics.qmd` to populate.\n")
+}
+```
 
 ## Scale Reliability
 

@@ -12,29 +12,6 @@ rounded_numbers <- function(df, digits = 3) {
   df |> mutate(across(where(is.numeric), \(x) round(x, digits)))
 }
 
-# Print the source of a named function from R/functions files as a markdown code block.
-# Used in preregistration chunks with results='asis' to show the exact model specification.
-print_a_function_from_file <- function(fn_name, path = here("R/functions")) {
-  files <- list.files(path, pattern = "\\.R$", full.names = TRUE)
-  for (f in files) {
-    lines <- readLines(f, warn = FALSE)
-    start <- grep(paste0("^", fn_name, "\\s*<-\\s*function"), lines)
-    if (length(start) == 0) next
-    start <- start[1]
-    open <- 0
-    end <- start
-    for (i in start:length(lines)) {
-      open <- open +
-        stringr::str_count(lines[i], "\\{") -
-        stringr::str_count(lines[i], "\\}")
-      if (i >= start && open <= 0) { end <- i; break }
-    }
-    cat("```r\n", paste(lines[start:end], collapse = "\n"), "\n```\n", sep = "")
-    return(invisible(NULL))
-  }
-  warning("Function '", fn_name, "' not found in ", path)
-}
-
 # OLS regression with HC2 heteroskedasticity-robust standard errors.
 #
 # Returns a one-row tibble with the focal predictor's coefficient, so that

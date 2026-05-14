@@ -1,0 +1,15 @@
+{
+  "hash": "32d31fa8d93f2c7393e37234c7a67faa",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Alienation and Trust in Climate Scientists in the US\"\nformat:\n  html:\n    code-tools: false\n    toc: false\nsidebar: false\n---\n\n\n::: {.cell}\n\n:::\n\n\n### Abstract\n\nTrust in climate scientists is declining and deeply polarized in the United States.\nProminent psychological accounts attribute distrust to cognitive deficiencies — lack of\nknowledge, motivated reasoning, or conspiracist thinking — treating distrust as a product\nof individual irrationality. We test an alternative: the alienation model of science\ndistrust, which holds that distrust stems from structural exclusion from science rather\nthan individual cognitive failings. People who are structurally excluded from science —\ninstitutionally, socially, geographically, or informationally — will be more likely to\nfeel alienated from science, and therefore more likely to distrust scientists. This distrust\nmay be rational: those who are structurally excluded from an institution have less influence\nover its decisions, which increases their vulnerability and may warrant greater wariness.\nWe derive and test specific individual-level predictions of the alienation model using data\nfrom a large, nationally representative US sample (N ≈ 22,000). All analyses are\ncorrelational, and all hypotheses and analytical procedures are pre-registered prior to\ndata collection.\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

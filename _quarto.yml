@@ -4,7 +4,8 @@ project:
   render:
     - "*.qmd"
     - "!analysis.qmd"
-
+    - "!institutions.qmd"
+    - "!scientist_demographics.qmd"
 freeze: auto
 
 website:

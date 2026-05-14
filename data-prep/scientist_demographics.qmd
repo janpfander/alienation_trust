@@ -1,0 +1,675 @@
+---
+title: "Scientist Demographics: IPEDS and ACS Comparison"
+author: "Jan Pfänder"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: show
+    self-contained: true
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+## Overview
+
+This document characterises the demographic composition of the US scientific workforce on
+**race/ethnicity**, **gender**, and **income** across two complementary data sources:
+
+| Source | What it measures | Race/Gender | Income |
+|---|---|---|---|
+| **IPEDS Completions C2022_A** | Doctoral degree pipeline — who earns a PhD | ✓ | — |
+| **ACS PUMS 5-year (2018–22)** | Employed workforce — who works as a scientist | ✓ | ✓ |
+
+Each source is analysed at three levels of scope:
+
+- **All researchers** — the broadest reference category: anyone completing a doctoral
+  research degree (IPEDS) or working in a science, social science, math/statistics, or
+  postsecondary teaching occupation (ACS)
+- **Natural sciences** — physical, biological, earth, and environmental sciences
+- **Climate-adjacent** — atmospheric, geological/earth, oceanographic, ecological, and
+  natural resource sciences; the fields most directly relevant to climate research
+
+**Outputs** (gitignored, written alongside the raw inputs they derive from):
+
+- `data/scientist_demographics/ipeds/ipeds_demographics.rds` — tidy IPEDS summary: `scope`, `race_eth`, `gender`, `n`, `pct`
+- `data/scientist_demographics/census_pus/acs_demographics.rds` — tidy ACS summary: `scope`, `race_eth`, `gender`, `n`, `pct`
+- `data/scientist_demographics/census_pus/acs_income.rds` — individual-level ACS PUMS rows for employed scientists (income analysis)
+
+**Raw data sources** — both must exist locally before rendering this document.
+Each is produced by a standalone script in `R/`; run each once and the outputs
+sit in `data/scientist_demographics/` for re-use.
+
+| Source | Script | Output |
+|---|---|---|
+| IPEDS C2022_A (PhD completions) | `R/download_ipeds.R` | `data/scientist_demographics/ipeds/C2022_A.csv` |
+| ACS PUMS 5-year (employed workforce) | `R/download_pums.R` | `data/scientist_demographics/census_pus/pums_raw.rds` |
+
+The PUMS download takes 1–3 hours via the Census API; do **not** re-run it
+unless you must. See `R/download_pums.R` for prerequisites (free Census API
+key required).
+
+---
+
+## Setup
+
+```{r packages}
+library(tidyverse)
+library(tidycensus)   # only for the pums_variables metadata lookup
+library(here)
+```
+
+
+```{r plot-functions}
+list.files(here("R", "functions"), pattern = "\\.R$", full.names = TRUE) |>
+  walk(source)
+```
+
+---
+
+## Part 1: IPEDS Completions — Degree Pipeline
+
+We download IPEDS Completions (C2022_A), a census of all degrees awarded at US postsecondary
+institutions in 2021–22, broken down by institution, CIP code, award level, race/ethnicity,
+and gender. We analyse **doctoral research degrees only** (AWLEVEL = 17), which excludes
+professional doctorates (JD, MD, PharmD).
+
+### Load and clean
+
+Reads `data/scientist_demographics/ipeds/C2022_A.csv`. Re-generate by running
+`Rscript R/download_ipeds.R` (one-time, ~30s).
+
+```{r ipeds-load}
+ipeds_csv <- here("data", "scientist_demographics", "ipeds", "C2022_A.csv")
+if (!file.exists(ipeds_csv)) {
+  stop("IPEDS CSV not found. Run: Rscript R/download_ipeds.R")
+}
+comp_raw <- read_csv(ipeds_csv, show_col_types = FALSE)
+```
+
+```{r ipeds-clean}
+# Replace IPEDS suppression sentinels (-1, -2) with NA before aggregating
+comp_clean <- comp_raw |>
+  mutate(across(where(is.numeric), \(x) if_else(x < 0, NA_real_, as.numeric(x))))
+```
+
+### Helper: aggregate race/gender totals
+
+```{r ipeds-helper}
+# Column names for race (M = men, W = women) across all race/ethnicity categories
+race_gender_cols <- c(
+  "CTOTALM", "CTOTALW",
+  "CAIANM",  "CAIANW",   # Native American / Alaska Native
+  "CASIAM",  "CASIAW",   # Asian
+  "CBKAAM",  "CBKAAW",   # Black
+  "CHISPM",  "CHISPW",   # Hispanic
+  "CNHPIM",  "CNHPIW",   # Native Hawaiian / Pacific Islander
+  "CWHITM",  "CWHITW",   # White
+  "C2MORM",  "C2MORW",   # Two or more races
+  "CUNKNM",  "CUNKNW",   # Unknown
+  "CNRALM",  "CNRALW"    # Non-resident alien
+)
+
+# Takes a pre-filtered IPEDS dataframe (already MAJORNUM==1, AWLEVEL==17),
+# aggregates national totals, and returns a tidy race × gender tibble.
+aggregate_ipeds_demo <- function(df, scope_label) {
+  totals <- df |>
+    summarise(across(all_of(race_gender_cols), \(x) sum(x, na.rm = TRUE)))
+
+  tibble(
+    race_eth = rep(c(
+      "Native American", "Asian", "Black", "Hispanic",
+      "Pacific Islander", "White", "Two or more",
+      "Unknown", "Non-resident alien"
+    ), each = 2),
+    gender = rep(c("Men", "Women"), times = 9),
+    n = c(
+      totals$CAIANM, totals$CAIANW,
+      totals$CASIAM, totals$CASIAW,
+      totals$CBKAAM, totals$CBKAAW,
+      totals$CHISPM, totals$CHISPW,
+      totals$CNHPIM, totals$CNHPIW,
+      totals$CWHITM, totals$CWHITW,
+      totals$C2MORM, totals$C2MORW,
+      totals$CUNKNM, totals$CUNKNW,
+      totals$CNRALM, totals$CNRALW
+    ),
+    scope = scope_label
+  ) |>
+    mutate(pct = round(100 * n / sum(n, na.rm = TRUE), 1))
+}
+```
+
+### 1a: All doctoral research degrees
+
+No CIP restriction — every AWLEVEL = 17 degree across all fields. This is the broadest
+reference: anyone earning a research doctorate at a US institution.
+
+```{r ipeds-all}
+ipeds_all <- comp_clean |>
+  filter(MAJORNUM == 1, AWLEVEL == 17)
+
+cat("CIP codes (all doctoral):", n_distinct(ipeds_all$CIPCODE), "distinct codes\n")
+cat("Institutions:            ", n_distinct(ipeds_all$UNITID), "\n")
+
+ipeds_demo_all <- aggregate_ipeds_demo(ipeds_all, "All doctoral (all fields)")
+```
+
+### 1b: Natural sciences
+
+CIP codes included: **03** (Natural Resources & Conservation), **26** (Biological &
+Biomedical Sciences), **27** (Mathematics & Statistics), **40** (Physical Sciences).
+
+```{r ipeds-natural}
+ipeds_natural <- comp_clean |>
+  filter(
+    str_starts(CIPCODE, "03") | str_starts(CIPCODE, "26") |
+    str_starts(CIPCODE, "27") | str_starts(CIPCODE, "40"),
+    MAJORNUM == 1,
+    AWLEVEL  == 17
+  )
+
+cat("CIP codes (natural sciences):", n_distinct(ipeds_natural$CIPCODE), "distinct codes\n")
+cat("Institutions:               ", n_distinct(ipeds_natural$UNITID), "\n")
+
+ipeds_demo_natural <- aggregate_ipeds_demo(ipeds_natural, "Natural sciences")
+```
+
+### 1c: Climate-adjacent fields
+
+CIP codes included: **40.04** (Atmospheric Sciences), **40.06** (Geological/Earth Sciences),
+**40.07** (Oceanography), **26.13** (Ecology & Environmental Biology), **03** (Natural
+Resources & Conservation).
+
+```{r ipeds-climate}
+ipeds_climate <- comp_clean |>
+  filter(
+    str_starts(CIPCODE, "40.04") | str_starts(CIPCODE, "40.06") |
+    str_starts(CIPCODE, "40.07") | str_starts(CIPCODE, "26.13") |
+    str_starts(CIPCODE, "03"),
+    MAJORNUM == 1,
+    AWLEVEL  == 17
+  )
+
+cat("CIP codes (climate-adjacent):", n_distinct(ipeds_climate$CIPCODE), "\n")
+ipeds_climate |> pull(CIPCODE) |> unique() |> sort() |> print()
+
+ipeds_demo_climate <- aggregate_ipeds_demo(ipeds_climate, "Climate-adjacent")
+```
+
+### 1d: Tables and plots
+
+```{r ipeds-gender-table}
+bind_rows(ipeds_demo_all, ipeds_demo_natural, ipeds_demo_climate) |>
+  group_by(scope, gender) |>
+  summarise(n = sum(n, na.rm = TRUE), .groups = "drop") |>
+  group_by(scope) |>
+  mutate(pct = round(100 * n / sum(n), 1)) |>
+  ungroup() |>
+  rename(Scope = scope, Gender = gender, N = n, `%` = pct) |>
+  knitr::kable(
+    caption  = "IPEDS: Gender composition of doctoral completions (2022)",
+    format.args = list(big.mark = ",")
+  )
+```
+
+```{r ipeds-race-table}
+bind_rows(ipeds_demo_all, ipeds_demo_natural, ipeds_demo_climate) |>
+  filter(!race_eth %in% c("Non-resident alien", "Unknown")) |>
+  group_by(scope, race_eth) |>
+  summarise(n = sum(n, na.rm = TRUE), .groups = "drop") |>
+  group_by(scope) |>
+  mutate(pct_domestic = round(100 * n / sum(n), 1)) |>
+  ungroup() |>
+  arrange(scope, desc(n)) |>
+  rename(Scope = scope, `Race/ethnicity` = race_eth, N = n, `% (domestic)` = pct_domestic) |>
+  knitr::kable(
+    caption = "IPEDS: Race/ethnicity of doctoral completions (2022, domestic completers only)",
+    format.args = list(big.mark = ",")
+  )
+```
+
+```{r ipeds-plot}
+#| fig-cap: "IPEDS 2022: share of doctoral completions by race/ethnicity and gender across three scopes. Domestic completers only (non-resident alien and unknown excluded)."
+#| fig-width: 10
+#| fig-height: 5
+
+bind_rows(ipeds_demo_all, ipeds_demo_natural, ipeds_demo_climate) |>
+  filter(!race_eth %in% c("Non-resident alien", "Unknown")) |>
+  group_by(scope) |>
+  mutate(pct_domestic = round(100 * n / sum(n, na.rm = TRUE), 1)) |>
+  ungroup() |>
+  mutate(scope = factor(scope,
+    levels = c("All doctoral (all fields)", "Natural sciences", "Climate-adjacent"))) |>
+  ggplot(aes(x = pct_domestic, y = reorder(race_eth, pct_domestic), fill = gender)) +
+  geom_col(position = "dodge", width = 0.7) +
+  scale_fill_manual(values = c(Men = plot_palette[1], Women = plot_palette[4]), name = NULL) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.05))) +
+  facet_wrap(~scope) +
+  labs(
+    x        = "Share of doctoral completions (%)",
+    y        = NULL,
+    title    = "Representation in doctoral programs",
+    subtitle = "IPEDS Completions C2022_A · PhD only · domestic completers"
+  ) +
+  plot_theme
+```
+
+---
+
+## Part 2: ACS PUMS — Employed Workforce
+
+We use the ACS 5-year Public Use Microdata Sample (PUMS, 2018–2022), which pools five survey
+years for the largest possible sample of employed scientists. Occupation is identified using
+Census detailed occupation codes stored in the `OCCP` variable.
+
+### Occupation code discovery
+
+```{r acs-occp-lookup}
+# val_min holds the numeric occupation code; sprintf gives the 4-char string
+# matching the OCCP values returned by get_pums() ("1860", "1840", etc.)
+occp_labels <- pums_variables |>
+  filter(year == 2022, survey == "acs5", var_code == "OCCP", !is.na(val_min)) |>
+  transmute(
+    val_code  = sprintf("%04d", as.integer(val_min)),
+    val_label
+  )
+
+cat("All OCCP labels available in pums_variables:\n")
+print(occp_labels |> arrange(val_label), n = Inf)
+```
+
+```{r acs-occp-define}
+# Helper: exclude technician roles (they appear alongside scientists in some
+# ACS labels and would otherwise be caught as false positives)
+not_technician <- function(x) !str_detect(x, regex("technician", ignore_case = TRUE))
+
+# ── Climate-adjacent (most specific) ──────────────────────────────────────────
+# Matches: 1710 Atmospheric, 1750 Geoscientists/Hydrologists,
+#          1745 Environmental Scientists, 1640 Conservation Scientists/Foresters
+occp_climate_adjacent <- occp_labels |>
+  filter(
+    str_detect(val_label, regex(
+      "atmospheric|geoscient|hydrolog|environmental scientist|conservation scientist|forester",
+      ignore_case = TRUE
+    )),
+    not_technician(val_label)
+  ) |>
+  pull(val_code)
+
+# ── Natural sciences (superset of climate-adjacent) ───────────────────────────
+# Adds: 1600 Agricultural/Food Scientists, 1700 Astronomers/Physicists,
+#       1610 Biological Scientists, 1720 Chemists, 1650 Other Life Scientists,
+#       1760 Physical Scientists
+occp_natural_science_extra <- occp_labels |>
+  filter(
+    str_detect(val_label, regex(
+      "biolog|chemist|physicist|astronomer|agricultural.*scientist|life scientist|physical scientist",
+      ignore_case = TRUE
+    )),
+    not_technician(val_label)
+  ) |>
+  pull(val_code)
+
+occp_natural_science <- union(occp_climate_adjacent, occp_natural_science_extra)
+
+# ── All researchers (superset of natural sciences) ────────────────────────────
+# Adds: 1800 Economists, 1821/1822/1825 Psychologists,
+#       1860 Other Social Scientists (covers sociologists, anthropologists,
+#            political scientists — no separate ACS codes in 2022),
+#       1840 Urban Planners, 2205 Postsecondary Teachers,
+#       plus mathematicians/statisticians from the math occupations group
+occp_all_research_extra <- occp_labels |>
+  filter(str_detect(val_label, regex(
+    "economist|psychologist|social scientist|mathematician|statistician|postsecondary teacher|urban.*planner",
+    ignore_case = TRUE
+  ))) |>
+  pull(val_code)
+
+occp_all_research <- union(occp_natural_science, occp_all_research_extra)
+
+# ── Verification ──────────────────────────────────────────────────────────────
+stopifnot(all(occp_climate_adjacent %in% occp_natural_science))
+stopifnot(all(occp_natural_science  %in% occp_all_research))
+
+cat("Climate-adjacent (", length(occp_climate_adjacent), "):\n")
+occp_labels |> filter(val_code %in% occp_climate_adjacent) |> arrange(val_label) |> print(n = Inf)
+cat("\nNatural sciences — additions (", length(setdiff(occp_natural_science, occp_climate_adjacent)), "):\n")
+occp_labels |> filter(val_code %in% setdiff(occp_natural_science, occp_climate_adjacent)) |> arrange(val_label) |> print(n = Inf)
+cat("\nAll researchers — additions (", length(setdiff(occp_all_research, occp_natural_science)), "):\n")
+occp_labels |> filter(val_code %in% setdiff(occp_all_research, occp_natural_science)) |> arrange(val_label) |> print(n = Inf)
+```
+
+### Load ACS PUMS
+
+Reads `data/scientist_demographics/pums_raw.rds` produced by `R/download_pums.R`. Re-generating that file takes 1–3 hours via the Census
+API; do not re-run unless necessary.
+
+```{r acs-load}
+pums_path <- here("data", "scientist_demographics", "census_pus", "pums_raw.rds")
+if (!file.exists(pums_path)) {
+  stop("PUMS RDS not found. Run: Rscript R/download_pums.R (slow, 1–3 hours)")
+}
+pums_raw <- readRDS(pums_path)
+
+cat("PUMS rows loaded:", format(nrow(pums_raw), big.mark = ","), "\n")
+```
+
+```{r acs-recode}
+# Keep employed civilians only (ESR 1 = at work, 2 = has job but not at work)
+# Recode race/ethnicity and gender to match IPEDS categories
+pums_sci <- pums_raw |>
+  filter(ESR %in% c("1", "2")) |>
+  mutate(
+    gender   = if_else(SEX == "1", "Men", "Women"),
+    race_eth = case_when(
+      HISP != "01"              ~ "Hispanic",
+      RAC1P == "1"              ~ "White",
+      RAC1P == "2"              ~ "Black",
+      RAC1P == "6"              ~ "Asian",
+      RAC1P %in% c("3","4","5") ~ "Native American",
+      RAC1P == "7"              ~ "Pacific Islander",
+      RAC1P == "9"              ~ "Two or more",
+      TRUE                      ~ "Unknown"
+    ),
+    wage   = if_else(as.numeric(WAGP) > 0, as.numeric(WAGP), NA_real_),
+    weight = as.numeric(PWGTP)
+  )
+```
+
+### Helper: aggregate race/gender totals
+
+```{r acs-helper}
+# Takes a pre-filtered ACS tibble, returns weighted race × gender summary
+aggregate_acs_demo <- function(df, scope_label) {
+  df |>
+    group_by(race_eth, gender) |>
+    summarise(n = sum(weight), .groups = "drop") |>
+    mutate(
+      pct   = round(100 * n / sum(n), 1),
+      scope = scope_label
+    )
+}
+```
+
+### 2a: All research/academic occupations
+
+Includes all natural and social scientists, mathematicians, statisticians, and postsecondary
+teachers. This is the broadest employed-workforce parallel to the IPEDS all-doctoral scope.
+
+```{r acs-all}
+acs_all <- pums_sci |> filter(OCCP %in% occp_all_research)
+
+cat("Rows (all research occupations, employed):", format(nrow(acs_all), big.mark = ","), "\n")
+cat("By occupation (top 20 by weighted N):\n")
+acs_all |>
+  left_join(occp_labels, by = c("OCCP" = "val_code")) |>
+  count(OCCP, val_label, wt = weight) |>
+  arrange(desc(n)) |>
+  slice_head(n = 20) |>
+  print()
+
+acs_demo_all <- aggregate_acs_demo(acs_all, "All research occupations")
+```
+
+### 2b: Natural science occupations
+
+```{r acs-natural}
+acs_natural <- pums_sci |> filter(OCCP %in% occp_natural_science)
+
+cat("Rows (natural sciences, employed):", format(nrow(acs_natural), big.mark = ","), "\n")
+
+acs_demo_natural <- aggregate_acs_demo(acs_natural, "Natural sciences")
+```
+
+### 2c: Climate-adjacent occupations
+
+```{r acs-climate}
+acs_climate <- pums_sci |> filter(OCCP %in% occp_climate_adjacent)
+
+cat("Rows (climate-adjacent, employed):", format(nrow(acs_climate), big.mark = ","), "\n")
+cat("By occupation:\n")
+acs_climate |>
+  left_join(occp_labels, by = c("OCCP" = "val_code")) |>
+  count(OCCP, val_label, wt = weight) |>
+  arrange(desc(n)) |>
+  print()
+
+acs_demo_climate <- aggregate_acs_demo(acs_climate, "Climate-adjacent")
+```
+
+### 2d: Tables and plots
+
+```{r acs-gender-table}
+bind_rows(acs_demo_all, acs_demo_natural, acs_demo_climate) |>
+  group_by(scope, gender) |>
+  summarise(n = sum(n), .groups = "drop") |>
+  group_by(scope) |>
+  mutate(pct = round(100 * n / sum(n), 1)) |>
+  ungroup() |>
+  rename(Scope = scope, Gender = gender, N = n, `%` = pct) |>
+  knitr::kable(
+    caption = "ACS: Gender composition of employed scientists (2018–22, weighted)",
+    format.args = list(big.mark = ",")
+  )
+```
+
+```{r acs-race-table}
+bind_rows(acs_demo_all, acs_demo_natural, acs_demo_climate) |>
+  filter(race_eth != "Unknown") |>
+  group_by(scope) |>
+  mutate(pct = round(100 * n / sum(n), 1)) |>
+  ungroup() |>
+  arrange(scope, desc(n)) |>
+  rename(Scope = scope, `Race/ethnicity` = race_eth, N = n, `%` = pct) |>
+  knitr::kable(
+    caption = "ACS: Race/ethnicity of employed scientists (2018–22, weighted, unknown excluded)",
+    format.args = list(big.mark = ",")
+  )
+```
+
+```{r acs-demo-plot}
+#| fig-cap: "ACS 2018–22: share of employed scientists by race/ethnicity and gender across three scopes. Weighted estimates; unknown race excluded."
+#| fig-width: 10
+#| fig-height: 5
+
+bind_rows(acs_demo_all, acs_demo_natural, acs_demo_climate) |>
+  filter(race_eth != "Unknown") |>
+  group_by(scope) |>
+  mutate(pct = round(100 * n / sum(n), 1)) |>
+  ungroup() |>
+  mutate(scope = factor(scope,
+    levels = c("All research occupations", "Natural sciences", "Climate-adjacent"))) |>
+  ggplot(aes(x = pct, y = reorder(race_eth, pct), fill = gender)) +
+  geom_col(position = "dodge", width = 0.7) +
+  scale_fill_manual(values = c(Men = plot_palette[1], Women = plot_palette[4]), name = NULL) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.05))) +
+  facet_wrap(~scope) +
+  labs(
+    x        = "Share of employed workers (%)",
+    y        = NULL,
+    title    = "Representation among employed researchers",
+    subtitle = "ACS PUMS 2018–22 · employed civilians · weighted"
+  ) +
+  plot_theme
+```
+
+### 2e: Income
+
+```{r acs-income-table}
+bind_rows(
+  mutate(acs_all,     scope = "All research occupations"),
+  mutate(acs_natural, scope = "Natural sciences"),
+  mutate(acs_climate, scope = "Climate-adjacent")
+) |>
+  filter(!is.na(wage)) |>
+  group_by(scope) |>
+  summarise(
+    n              = sum(weight),
+    median_wage    = round(matrixStats::weightedMedian(wage, weight) / 1000) * 1000,
+    pct_over_100k  = round(
+      100 * sum((wage > 100000) * weight) / sum(weight), 1
+    ),
+    pct_over_150k  = round(
+      100 * sum((wage > 150000) * weight) / sum(weight), 1
+    ),
+    .groups = "drop"
+  ) |>
+  mutate(scope = factor(scope,
+    levels = c("All research occupations", "Natural sciences", "Climate-adjacent"))) |>
+  arrange(scope) |>
+  rename(
+    Scope = scope, N = n,
+    `Median wage` = median_wage,
+    `% >$100k` = pct_over_100k,
+    `% >$150k` = pct_over_150k
+  ) |>
+  knitr::kable(
+    caption = "ACS: Income of employed scientists (2018–22, weighted)",
+    format.args = list(big.mark = ",")
+  )
+```
+
+```{r acs-income-plot}
+#| fig-cap: "Income distribution by scope (ACS PUMS 2018–22, weighted). Dashed line = US median earnings for all workers 16+ (~$48,060 in 2022)."
+#| fig-width: 7
+#| fig-height: 4
+
+bind_rows(
+  mutate(acs_all,     scope = "All research occupations"),
+  mutate(acs_natural, scope = "Natural sciences"),
+  mutate(acs_climate, scope = "Climate-adjacent")
+) |>
+  filter(!is.na(wage)) |>
+  mutate(scope = factor(scope,
+    levels = c("All research occupations", "Natural sciences", "Climate-adjacent"))) |>
+  ggplot(aes(x = wage / 1000, color = scope, weight = weight)) +
+  geom_density(linewidth = 0.8, adjust = 1.5) +
+  geom_vline(xintercept = 48.06, linetype = "dashed",
+             color = "grey40", linewidth = 0.4) +
+  annotate("text", x = 51, y = Inf, vjust = 1.5, hjust = 0,
+           label = "US median", size = 3, color = "grey40") +
+  scale_x_continuous(
+    limits = c(0, 300),
+    labels = scales::dollar_format(suffix = "k", scale = 1)
+  ) +
+  scale_color_manual(
+    values = plot_palette[c(1, 3, 4)],
+    name   = NULL
+  ) +
+  labs(
+    x        = "Annual wage / salary income",
+    y        = "Density",
+    title    = "Income distribution by scope",
+    subtitle = "ACS PUMS 2018–22 · employed civilians · weighted"
+  ) +
+  plot_theme
+```
+
+---
+
+## Part 3: Cross-Source Comparison (Climate-Adjacent)
+
+IPEDS measures the PhD degree pipeline (who earns a doctorate); ACS measures the employed
+workforce (who works as a scientist). Differences between the two highlight barriers beyond
+degree completion — in hiring, retention, or career progression.
+
+```{r compare-prep}
+# Align race/ethnicity labels; drop Non-resident alien and Unknown for valid comparison
+ipeds_for_compare <- ipeds_demo_climate |>
+  filter(!race_eth %in% c("Non-resident alien", "Unknown")) |>
+  group_by(race_eth, gender) |>
+  summarise(n = sum(n, na.rm = TRUE), .groups = "drop") |>
+  group_by(gender) |>
+  mutate(
+    pct    = round(100 * n / sum(n), 1),
+    source = "IPEDS (PhD pipeline, 2022)"
+  ) |>
+  ungroup()
+
+acs_for_compare <- acs_demo_climate |>
+  filter(race_eth != "Unknown") |>
+  group_by(race_eth, gender) |>
+  summarise(n = sum(n), .groups = "drop") |>
+  group_by(gender) |>
+  mutate(
+    pct    = round(100 * n / sum(n), 1),
+    source = "ACS (employed workforce, 2018–22)"
+  ) |>
+  ungroup()
+```
+
+```{r compare-table}
+bind_rows(ipeds_for_compare, acs_for_compare) |>
+  select(source, race_eth, gender, pct) |>
+  pivot_wider(names_from = source, values_from = pct) |>
+  arrange(race_eth, gender) |>
+  knitr::kable(
+    caption = "Pipeline vs. workforce: race/ethnicity by gender (climate-adjacent fields, % within gender group)",
+    digits  = 1
+  )
+```
+
+```{r compare-plot}
+#| fig-cap: "PhD pipeline (IPEDS 2022) vs. employed workforce (ACS 2018–22) for climate-adjacent science fields. Differences show where demographic gaps widen or narrow between degree completion and employment."
+#| fig-width: 8
+#| fig-height: 5
+
+bind_rows(ipeds_for_compare, acs_for_compare) |>
+  ggplot(aes(x = pct, y = reorder(race_eth, pct),
+             color = source, shape = source)) +
+  geom_point(size = 3) +
+  scale_color_manual(
+    values = c(plot_palette[1], plot_palette[4]),
+    name   = NULL
+  ) +
+  scale_shape_manual(values = c(16, 17), name = NULL) +
+  scale_x_continuous(expand = expansion(mult = c(0.02, 0.1))) +
+  facet_wrap(~gender) +
+  labs(
+    x        = "Share within gender group (%)",
+    y        = NULL,
+    title    = "PhD pipeline vs. employed workforce: climate-adjacent science",
+    subtitle = "IPEDS 2022 · ACS 2018–22 · domestic completers"
+  ) +
+  plot_theme +
+  theme(legend.position = "top")
+```
+
+---
+
+## Save Outputs
+
+```{r save-outputs}
+# Combine IPEDS results (all three scopes)
+ipeds_demographics <- bind_rows(ipeds_demo_all, ipeds_demo_natural, ipeds_demo_climate)
+saveRDS(ipeds_demographics, here("data", "scientist_demographics", "ipeds", "ipeds_demographics.rds"))
+cat("Saved ipeds/ipeds_demographics.rds:", nrow(ipeds_demographics), "rows\n")
+
+# Combine ACS demographics results (all three scopes)
+acs_demographics <- bind_rows(acs_demo_all, acs_demo_natural, acs_demo_climate)
+saveRDS(acs_demographics, here("data", "scientist_demographics", "census_pus", "acs_demographics.rds"))
+cat("Saved census_pus/acs_demographics.rds:", nrow(acs_demographics), "rows\n")
+
+# ACS individual rows for income analysis (all three scopes)
+saveRDS(
+  bind_rows(
+    mutate(acs_all,     scope = "All research occupations"),
+    mutate(acs_natural, scope = "Natural sciences"),
+    mutate(acs_climate, scope = "Climate-adjacent")
+  ),
+  here("data", "scientist_demographics", "census_pus", "acs_income.rds")
+)
+cat("Saved census_pus/acs_income.rds\n")
+```
+
+---
+
+## Session Info
+
+```{r session-info}
+sessionInfo()
+```

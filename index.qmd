@@ -1,28 +1,18 @@
 ---
-title: "Alienation and Trust in Climate Scientists"
+title: "Alienation and Trust in Climate Scientists in the US"
+format:
+  html:
+    code-tools: false
+    toc: false
+sidebar: false
 ---
 
-## About this project
+```{r echo=FALSE}
+yaml_metadata <- rmarkdown::yaml_front_matter(here::here("preregistration/preregistration.qmd"))
+title <- yaml_metadata$title
+abstract <- yaml_metadata$abstract
+```
 
-This project provides the first direct, individual-level test of the **alienation model of science distrust**, applied to trust in climate scientists.
+### Abstract
 
-Prominent psychological accounts attribute distrust in scientists to cognitive deficiencies — lack of knowledge, motivated reasoning, or conspiracist thinking. We test a structural alternative: the *alienation model* [@gauchat2012politicization], which holds that distrust stems from perceived exclusion from scientific institutions rather than individual irrationality. People who feel structurally excluded — institutionally, socially, geographically, or informationally — have less influence over scientific institutions, which may rationally translate into greater wariness.
-
-We derive and test specific individual-level predictions of the alienation model using data from the **Trust-In Megastudy** (N ≈ 22,000, US adults). All analyses are pre-registered correlational tests conducted on survey data collected as part of the megastudy.
-
-## Key questions
-
-- Do people who feel more alienated from climate science distrust climate scientists more? (*H1*)
-- Does this association strengthen among those with a high need for epistemic autonomy? (*H2*)
-- Do structurally underrepresented groups — by race, education, gender, income — report higher institutional and social alienation? (*RQ1*)
-- Do people living farther from scientific institutions report higher spatial alienation? (*RQ2*)
-- Is alienation more strongly linked to distrust along the dimensions of benevolence, integrity, and openness than competence? (*RQ3*)
-- Do alienated people more strongly oppose scientists having a role in shaping public policy? (*RQ4*)
-
-## Data
-
-Data come from the [Trust-In Megastudy](https://janpfander.github.io/trust_climate_scientists/), a large collaborative experiment testing 20 interventions to strengthen trust in climate scientists. The megastudy was conducted on a national US sample via CloudResearch (N ≈ 22,000). This project uses only the pre-treatment measures and correlates them; no experimental comparisons are made.
-
-## Pre-registration
-
-This project is pre-registered. See the [preregistration document](preregistration/preregistration.qmd) for full hypotheses, measures, and analysis plan.
+`r abstract`
